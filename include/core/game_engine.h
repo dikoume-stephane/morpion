@@ -1,8 +1,11 @@
 #pragma once
 
-#include "../graphics/window.h"
+#include <vector>
 #include "player.h"
-#include <chrono>
+#include "../graphics/window.h"
+#include "../../libs/imgui/imgui.h"
+#include "../../libs/imgui/backends/imgui_impl_sdl3.h"
+#include "../../libs/imgui/backends/imgui_impl_sdlrenderer3.h"
 
 namespace Morpion {
 namespace Core {
@@ -15,10 +18,12 @@ private:
     Morpion::Core::theme CurrentTheme;
     bool gRunningstatus;
     bool gIsPaused;
-
+    int gGrilleTaile =5;
+    std::vector<Case> grille;
 
 public:
     Morpion::Core::Case bord[9];
+    
     int player = 1;
     
 public:
@@ -29,6 +34,7 @@ public:
     bool Initialize();
     void Run();
     void Shutdown();
+    void loadGrille(float hauteur, float largeur, int taille);
     
     // 🎮 GESTION D'ÉVÉNEMENTS
     void HandleEvents();
@@ -41,6 +47,7 @@ private:
     void loadvoid();
     void loadbord();
     void RenderUI();
+    void IUshutdown();
 };
 bool SDL_PointInFRect(SDL_Point* p ,SDL_FRect* r );
 

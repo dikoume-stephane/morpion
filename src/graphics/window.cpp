@@ -1,5 +1,5 @@
 #include "graphics/window.h"
-#include <iostream>
+
 
 namespace Morpion {
 namespace Graphics {
@@ -17,7 +17,7 @@ Window::~Window() {
 // ⚙️ INITIALISATION
 bool Window::Initialize() {
     
-    gWindow = SDL_CreateWindow(gTitle.c_str(), static_cast<int>(gWidth), static_cast<int>(gHeight), 0);
+    gWindow = SDL_CreateWindow(gTitle.c_str(), static_cast<int>(gWidth), static_cast<int>(gHeight), SDL_WINDOW_RESIZABLE);
     if (!gWindow) {
         std::cerr << "❌ Erreur création fenêtre: " << SDL_GetError() << std::endl;
         SDL_Quit();
@@ -120,6 +120,7 @@ void Window::destroythemes(Morpion::Core::theme* themes)
 Morpion::Core::theme Window::GetCurrentTheme()
 {
     return themes[gThemeIs-1];
+    
 }
 
 } // namespace Graphics

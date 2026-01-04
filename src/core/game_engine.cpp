@@ -16,14 +16,49 @@ namespace Morpion
         // ⚙️ INITIALISATION
         bool Game::Initialize()
         {
+            
             if (!gWindow.Initialize())
             {
                 return false;
             }
-            
+            grenderer = gWindow.GetRenderer();
+
+            //initialisation des composantes imgui
+            ImGui::CreateContext();
+            ImGui_ImplSDL3_InitForSDLRenderer(gWindow.GetgWindow(), grenderer);
+            ImGui_ImplSDLRenderer3_Init(grenderer);
+
+            //initialisation de la grille
+            loadGrille(gWindow.GetHeight(), gWindow.GetWidth(),gGrilleTaile);
             gRunningstatus = true;
             std::cout << "✅ Moteur de jeu initialisé" << std::endl;
             return true;
+        }
+
+        void Game::loadGrille(float hauteur, float largeur, int taille)
+        {
+            SDL_FRect cadre;
+            Case c; 
+            int marge = 4;
+            int taillecase = (hauteur -(taille+1)*marge)/taille;
+
+            int ajustx = (largeur -((taillecase*taille)+(taille+1)*marge))/2;
+            int ajusty = (hauteur -((taillecase*taille)+(taille+1)*marge))/2;
+            for (int i = 0; i < taille; i++)
+            {
+                for (int j = 0 ; j < taille; j++)
+                {
+                    cadre.x = ajustx+marge+j*(taillecase+marge);
+                    cadre.y = ajusty+marge+i*(taillecase+marge);
+                    cadre.h = taillecase;
+                    cadre.w = taillecase;
+
+                    c.cadre = cadre;
+                    c.etat =0;
+                    grille.push_back(c);
+                }
+            }
+            std::cout <<"bon"<<std::endl;
         }
 
         // 🎮 BOUCLE PRINCIPALE
@@ -31,10 +66,10 @@ namespace Morpion
         {
             std::cout << "🎯 Démarrage de la boucle de jeu..." << std::endl;
             CurrentTheme = gWindow.GetCurrentTheme();
-            loadbord();
-
+            
             while (gRunningstatus)
             {
+                CurrentTheme = gWindow.GetCurrentTheme();
                 HandleEvents();
                 Render();
                 
@@ -48,6 +83,7 @@ namespace Morpion
         {
             gRunningstatus = false;
             std::cout << "arret du Moteur de jeu " << std::endl;
+            IUshutdown();
         }
 
         // 🎮 GESTION DES ÉVÉNEMENTS
@@ -56,11 +92,19 @@ namespace Morpion
             SDL_Event event;
            while (SDL_PollEvent(&event)) 
             {
+                ImGui_ImplSDL3_ProcessEvent(&event);
                 if (event.type == SDL_EVENT_QUIT || (event.type == SDL_EVENT_KEY_DOWN && event.key.scancode == SDL_SCANCODE_ESCAPE) ) 
                 {
                     gRunningstatus = false;
                 }
-                        
+                  
+                if (event.type == SDL_EVENT_WINDOW_RESIZED)
+                {
+                    int h,w;
+                    SDL_GetWindowSize(gWindow.GetgWindow(), &w, &h);
+                    loadGrille(h, w,gGrilleTaile);
+                }
+
                 if(event.type == SDL_EVENT_MOUSE_BUTTON_DOWN)
                 {
                     HandleInput(event);
@@ -78,22 +122,15 @@ namespace Morpion
             {
                 SDL_Point mouse = {static_cast<int>(even.button.x) , static_cast<int>(even.button.y)};
 
-                for ( i = 0; i < 9; i++)
+                for ( i = 0; i < gGrilleTaile*gGrilleTaile; i++)
                 {
-                    if (SDL_PointInFRect(&mouse , &bord[i].cadre))
+                    if (SDL_PointInFRect(&mouse , &grille.at(i).cadre))
                     {
-                        if (bord[i].etat == 0 && player == 1)
+                        if (grille.at(i).etat == 0 )
                         {
-                            bord[i].etat = 1;
-                            player = 2;
+                            grille.at(i).etat = player;
+                            player = (player == 1) ? 2 : 1;
                         }
-
-                        if (bord[i].etat == 0 && player == 2)
-                        {
-                            bord[i].etat = 2;
-                            player = 1;
-                        }
-                        
                     }
                 }
                 
@@ -120,16 +157,16 @@ namespace Morpion
         {
             int i;
             //chargement des images en fonction du player
-            for (i=0 ; i<9 ; i++)
+            for (i=0 ; i < gGrilleTaile*gGrilleTaile ; i++)
             {
-                if ( bord[i].etat == 1)
+                if ( grille.at(i).etat == 1)
                 {
-                    SDL_RenderTexture(grenderer , CurrentTheme.piont[1] , NULL , &bord[i].cadre);
+                    SDL_RenderTexture(grenderer , CurrentTheme.piont[1] , NULL , &grille.at(i).cadre);
                 }
 
-                if ( bord[i].etat == 2)
+                if ( grille.at(i).etat == 2)
                 {
-                    SDL_RenderTexture(grenderer , CurrentTheme.piont[2] , NULL , &bord[i].cadre);
+                    SDL_RenderTexture(grenderer , CurrentTheme.piont[2] , NULL , &grille.at(i).cadre);
                 }
             }
         }
@@ -137,13 +174,12 @@ namespace Morpion
         void Game::loadvoid()
         {
             int i;
-            SDL_SetRenderDrawColor(grenderer, 255, 0, 0, 255);
-            for (i=0 ; i<9 ; i++)
+            for (i=0 ; i < gGrilleTaile*gGrilleTaile ; i++)
             {
-                SDL_RenderFillRect(grenderer , &bord[i].cadre );
-                if (bord[i].etat == 0)
+                SDL_RenderFillRect(grenderer , &grille.at(i).cadre );
+                if (grille.at(i).etat == 0)
                 {
-                SDL_RenderTexture(grenderer , CurrentTheme.piont[0] , NULL , &bord[i].cadre);
+                SDL_RenderTexture(grenderer , CurrentTheme.piont[0] , NULL , &grille.at(i).cadre);
                 }
             }
 
@@ -173,8 +209,46 @@ namespace Morpion
         // 📊 INTERFACE UTILISATEUR
         void Game::RenderUI()
         {
-            // Pour l'instant, interface texte dans la console
-            // Une vraie interface graphique serait implémentée ici
+            int them =1;
+
+            ImGui_ImplSDLRenderer3_NewFrame();
+            ImGui_ImplSDL3_NewFrame();
+            ImGui::NewFrame();
+
+            ImGui::SetNextWindowPos(ImVec2(1180, 0), ImGuiCond_Always);
+            ImGui::SetNextWindowSize(ImVec2(100, 110), ImGuiCond_Always);
+            // Votre UI identique
+            ImGui::Begin("options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+            ImGui::Text("--------");
+            
+            if (ImGui::Selectable("classic", them == 1))
+            {
+                them = 1;
+                gWindow.SetThemeIs(them);
+            }
+            if (ImGui::Selectable("galaxi", them == 2))
+            {
+                them = 2;
+                gWindow.SetThemeIs(them);
+            }
+            if (ImGui::Selectable("champ", them == 3))
+            {
+                them = 3;
+                gWindow.SetThemeIs(them);
+            }
+            
+
+            ImGui::End();
+
+            ImGui::Render();
+            ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(),grenderer);
+        }
+
+        void Game::IUshutdown()
+        {
+            ImGui_ImplSDLRenderer3_Shutdown();
+            ImGui_ImplSDL3_Shutdown();
+            ImGui::DestroyContext();
         }
 
         bool SDL_PointInFRect(SDL_Point* p ,SDL_FRect* r )

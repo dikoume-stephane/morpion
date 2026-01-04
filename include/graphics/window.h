@@ -5,6 +5,7 @@
 #include "../core/structs.h" 
 //#include "libs/SDL3/SDL3_image/SDL_image.h"
 #include <SDL3_image/SDL_image.h>
+#include <iostream>
 
 namespace Morpion { 
 namespace Graphics { 
@@ -17,9 +18,9 @@ private:
     float gHeight; 
     bool gInitializedstatus; 
     std::string gTitle;
-    int gThemeIs;
 
 public: 
+    int gThemeIs;
     Morpion::Core::theme themes[3];
     // 🏗 CONSTRUCTEUR/DESTRUCTEUR 
     Window(const std::string& title, float width, float height); 
@@ -33,9 +34,13 @@ public:
     // RENDU 
     void Clear(const Core::Color& color ); 
     void Present(); 
+
+    //setter
+    void SetThemeIs(int valeur) { gThemeIs = valeur; }
      
     // GETTERS 
-    SDL_Renderer* GetRenderer() const { return gRenderer; } 
+    SDL_Renderer* GetRenderer() const { return gRenderer; }
+    SDL_Window* GetgWindow() const { return gWindow; } 
     bool IsInitialized() const { return gInitializedstatus; } 
     float GetWidth() const { return gWidth; } 
     float GetHeight() const { return gHeight; } 

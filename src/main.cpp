@@ -4,11 +4,6 @@
 #include <windows.h> 
 #include <thread>
 
-#ifdef main
-#undef main
-#define main SDL_MainThreadCallback
-#endif
-
 int main(int argc, char* argv[]) {
     SetConsoleOutputCP(CP_UTF8); 
     // Initialisation de l'aléatoire 
