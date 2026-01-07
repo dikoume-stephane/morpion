@@ -55,7 +55,7 @@ namespace Morpion
             {
                 for (int j = 0; j < taille; j++)
                 {
-                    // Calcul de la position du rectangle
+                    // Calcul de la nouvelle position du rectangle
                     cadre.x = ajustx + marge + j * (taillecase + marge);
                     cadre.y = ajusty + marge + i * (taillecase + marge);
                     cadre.h = taillecase;
@@ -245,7 +245,7 @@ namespace Morpion
             if (Lpanel < 150) Lpanel = 150;
 
             // Hauteur du panneau : 50% de la hauteur de l'écran
-            float Hpanel = h * 0.5f;
+            float Hpanel = h * 0.3f;
 
             // Position Collé à droite (Largeur écran - Largeur panneau - petite marge)
             float posX = w - Lpanel - 4;
@@ -253,46 +253,56 @@ namespace Morpion
 
             ImGui::SetNextWindowPos(ImVec2(posX, posY), ImGuiCond_Always);
             ImGui::SetNextWindowSize(ImVec2(Lpanel, Hpanel), ImGuiCond_Always);
+            ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
 
-            ImGui::Begin("options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
+            ImGui::Begin("options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize );
 
-            ImGui::SeparatorText("Taille de la grille");
-            // Bouton pour 3x3
-            if (ImGui::RadioButton("3x3", gGrilleTaile == 3))
+            if (ImGui::CollapsingHeader("Taille de grille"))
             {
-                changegrillsize(3, h, w);
-            }
-            // Bouton pour 4x4
-            if (ImGui::RadioButton("4x4", gGrilleTaile == 4))
-            {
-                changegrillsize(4, h, w);
-            }
-            // Bouton pour 5x5
-            if (ImGui::RadioButton("5x5", gGrilleTaile == 5))
-            {
-                changegrillsize(5, h, w);
+                
+                ImGui::Indent();
+                // Bouton pour 3x3
+                if (ImGui::RadioButton("3x3", gGrilleTaile == 3))
+                {
+                    changegrillsize(3, h, w);
+                }
+                // Bouton pour 4x4
+                if (ImGui::RadioButton("4x4", gGrilleTaile == 4))
+                {
+                    changegrillsize(4, h, w);
+                }
+                // Bouton pour 5x5
+                if (ImGui::RadioButton("5x5", gGrilleTaile == 5))
+                {
+                    changegrillsize(5, h, w);
+                }
+
+                ImGui::Unindent();
             }
 
-            ImGui::Spacing();
-            ImGui::SeparatorText("Themes");
-
+            //ImGui::Spacing();
             //pour les themes
-            if (ImGui::Selectable("classic", them == 1))
+            if(ImGui::CollapsingHeader("Themes"))
             {
-                them = 1;
-                gWindow.SetThemeIs(them);
+                ImGui::Indent();
+                
+                if (ImGui::Selectable("classic", them == 1))
+                {
+                    them = 1;
+                    gWindow.SetThemeIs(them);
+                }
+                if (ImGui::Selectable("galaxi", them == 2))
+                {
+                    them = 2;
+                    gWindow.SetThemeIs(them);
+                }
+                if (ImGui::Selectable("champ", them == 3))
+                {
+                    them = 3;
+                    gWindow.SetThemeIs(them);
+                }
+                ImGui::Unindent();
             }
-            if (ImGui::Selectable("galaxi", them == 2))
-            {
-                them = 2;
-                gWindow.SetThemeIs(them);
-            }
-            if (ImGui::Selectable("champ", them == 3))
-            {
-                them = 3;
-                gWindow.SetThemeIs(them);
-            }
-            
 
             ImGui::End();
 
