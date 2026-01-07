@@ -55,7 +55,7 @@ namespace Morpion
             {
                 for (int j = 0; j < taille; j++)
                 {
-                    // Calcul de la nouvelle position du rectangle
+                    // Calcul de la position du rectangle
                     cadre.x = ajustx + marge + j * (taillecase + marge);
                     cadre.y = ajusty + marge + i * (taillecase + marge);
                     cadre.h = taillecase;
