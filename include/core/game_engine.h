@@ -18,12 +18,10 @@ private:
     Morpion::Core::theme CurrentTheme;
     bool gRunningstatus;
     bool gIsPaused;
-    int gGrilleTaile =5;
+    int gGrilleTaile =6;
     std::vector<Case> grille;
 
 public:
-    Morpion::Core::Case bord[9];
-    
     int player = 1;
     
 public:
@@ -45,9 +43,9 @@ private:
     void Render();
     void RenderT();
     void loadvoid();
-    void loadbord();
     void RenderUI();
     void IUshutdown();
+    void changegrillsize(int nouvTaille, float h, float w);
 };
 bool SDL_PointInFRect(SDL_Point* p ,SDL_FRect* r );
 

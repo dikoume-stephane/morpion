@@ -38,27 +38,49 @@ namespace Morpion
         void Game::loadGrille(float hauteur, float largeur, int taille)
         {
             SDL_FRect cadre;
-            Case c; 
             int marge = 4;
-            int taillecase = (hauteur -(taille+1)*marge)/taille;
+            
+            float dimensionReference = (hauteur < largeur) ? hauteur : largeur;
+            
+            int taillecase = (dimensionReference - (taille + 1) * marge) / taille;
 
-            int ajustx = (largeur -((taillecase*taille)+(taille+1)*marge))/2;
-            int ajusty = (hauteur -((taillecase*taille)+(taille+1)*marge))/2;
+            // Recalcul des ajustements pour centrer la grille
+            int ajustx = (largeur - ((taillecase * taille) + (taille + 1) * marge)) / 2;
+            int ajusty = (hauteur - ((taillecase * taille) + (taille + 1) * marge)) / 2;
+
+            // Vérifie si la grille existe déjà avec la bonne taille
+            bool modeMiseAJour = (grille.size() == taille * taille);
+
             for (int i = 0; i < taille; i++)
             {
-                for (int j = 0 ; j < taille; j++)
+                for (int j = 0; j < taille; j++)
                 {
-                    cadre.x = ajustx+marge+j*(taillecase+marge);
-                    cadre.y = ajusty+marge+i*(taillecase+marge);
+                    // Calcul de la nouvelle position du rectangle
+                    cadre.x = ajustx + marge + j * (taillecase + marge);
+                    cadre.y = ajusty + marge + i * (taillecase + marge);
                     cadre.h = taillecase;
                     cadre.w = taillecase;
 
-                    c.cadre = cadre;
-                    c.etat =0;
-                    grille.push_back(c);
+                    if (modeMiseAJour)
+                    {
+                        // CAS 1 : Redimensionnement
+                        int index = (i * taille) + j;
+                        
+                        // On met à jour SEULEMENT le cadre visuel
+                        grille[index].cadre = cadre;
+                        
+                    }
+                    else
+                    {
+                        // CAS 2 : Initialisation
+                        // La grille est vide, on crée les cases
+                        Case c;
+                        c.cadre = cadre;
+                        c.etat = 0; // Vide par défaut
+                        grille.push_back(c);
+                    }
                 }
             }
-            std::cout <<"bon"<<std::endl;
         }
 
         // 🎮 BOUCLE PRINCIPALE
@@ -185,7 +207,7 @@ namespace Morpion
 
         }
 
-        void Game::loadbord()
+       /* void Game::loadbord()
         {
             float x=250.0f , y=101.0f;
             int a = 0, i, j;
@@ -204,23 +226,57 @@ namespace Morpion
                 b= b+taille+7;
         
             }
-        }
+        }*/
 
         // 📊 INTERFACE UTILISATEUR
         void Game::RenderUI()
         {
             int them =1;
+            // 1. Récupérer la taille actuelle de la fenêtre 
+            int w, h;
+            SDL_GetWindowSize(gWindow.GetgWindow(), &w, &h);
 
             ImGui_ImplSDLRenderer3_NewFrame();
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
 
-            ImGui::SetNextWindowPos(ImVec2(1180, 0), ImGuiCond_Always);
-            ImGui::SetNextWindowSize(ImVec2(100, 110), ImGuiCond_Always);
-            // Votre UI identique
+            // Largeur du panneau : 20% de la largeur de l'écran
+            float Lpanel = w * 0.12f; 
+            if (Lpanel < 150) Lpanel = 150;
+
+            // Hauteur du panneau : 50% de la hauteur de l'écran
+            float Hpanel = h * 0.5f;
+
+            // Position Collé à droite (Largeur écran - Largeur panneau - petite marge)
+            float posX = w - Lpanel - 4;
+            float posY = 4; // Petite marge en haut
+
+            ImGui::SetNextWindowPos(ImVec2(posX, posY), ImGuiCond_Always);
+            ImGui::SetNextWindowSize(ImVec2(Lpanel, Hpanel), ImGuiCond_Always);
+
             ImGui::Begin("options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize);
-            ImGui::Text("--------");
-            
+
+            ImGui::SeparatorText("Taille de la grille");
+            // Bouton pour 3x3
+            if (ImGui::RadioButton("3x3", gGrilleTaile == 3))
+            {
+                changegrillsize(3, h, w);
+            }
+            // Bouton pour 4x4
+            if (ImGui::RadioButton("4x4", gGrilleTaile == 4))
+            {
+                changegrillsize(4, h, w);
+            }
+            // Bouton pour 5x5
+            if (ImGui::RadioButton("5x5", gGrilleTaile == 5))
+            {
+                changegrillsize(5, h, w);
+            }
+
+            ImGui::Spacing();
+            ImGui::SeparatorText("Themes");
+
+            //pour les themes
             if (ImGui::Selectable("classic", them == 1))
             {
                 them = 1;
@@ -249,6 +305,23 @@ namespace Morpion
             ImGui_ImplSDLRenderer3_Shutdown();
             ImGui_ImplSDL3_Shutdown();
             ImGui::DestroyContext();
+        }
+
+        void Game::changegrillsize(int nouvTaille, float h, float w)
+        {
+            if (gGrilleTaile == nouvTaille) return;
+
+            gGrilleTaile = nouvTaille;
+
+            //on nettoie l'encienne grille
+            grille.clear();
+
+            //on reinitialise le joueur
+            player = 1;
+
+            //on recharge
+            loadGrille(h, w, gGrilleTaile);
+
         }
 
         bool SDL_PointInFRect(SDL_Point* p ,SDL_FRect* r )

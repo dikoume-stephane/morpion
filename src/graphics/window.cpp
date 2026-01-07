@@ -84,7 +84,7 @@ void Window::loadthemes()
     themes[2].piont[1] = IMG_LoadTexture(gRenderer , "../assets/texture/theme3/X3.png");
     themes[2].piont[2] = IMG_LoadTexture(gRenderer , "../assets/texture/theme3/O3.png");
     
-    themes[0].couleur = {205, 133, 63};
+    themes[0].couleur = {0, 0, 0};
     themes[1].couleur = {10, 10, 44};
     themes[2].couleur = {144, 238, 144};
 
