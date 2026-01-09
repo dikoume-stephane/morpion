@@ -74,17 +74,17 @@ void Window::Present() {
 void Window::loadthemes()
 {
     
-    themes[0].piont[0] = IMG_LoadTexture(gRenderer , "../assets/texture/theme1/vide1.png");
-    themes[0].piont[1] = IMG_LoadTexture(gRenderer , "../assets/texture/theme1/X1.png");
-    themes[0].piont[2] = IMG_LoadTexture(gRenderer , "../assets/texture/theme1/O1.png");
-    themes[1].piont[0] = IMG_LoadTexture(gRenderer , "../assets/texture/theme2/vide2.png");
-    themes[1].piont[1] = IMG_LoadTexture(gRenderer , "../assets/texture/theme2/X2.png");
-    themes[1].piont[2] = IMG_LoadTexture(gRenderer , "../assets/texture/theme2/O2.png");
-    themes[2].piont[0] = IMG_LoadTexture(gRenderer , "../assets/texture/theme3/vide3.png");
-    themes[2].piont[1] = IMG_LoadTexture(gRenderer , "../assets/texture/theme3/X3.png");
-    themes[2].piont[2] = IMG_LoadTexture(gRenderer , "../assets/texture/theme3/O3.png");
+    themes[0].piont[0] = IMG_LoadTexture(gRenderer , "assets/texture/theme1/vide1.png");
+    themes[0].piont[1] = IMG_LoadTexture(gRenderer , "assets/texture/theme1/X1.png");
+    themes[0].piont[2] = IMG_LoadTexture(gRenderer , "assets/texture/theme1/O1.png");
+    themes[1].piont[0] = IMG_LoadTexture(gRenderer , "assets/texture/theme2/vide2.png");
+    themes[1].piont[1] = IMG_LoadTexture(gRenderer , "assets/texture/theme2/X2.png");
+    themes[1].piont[2] = IMG_LoadTexture(gRenderer , "assets/texture/theme2/O2.png");
+    themes[2].piont[0] = IMG_LoadTexture(gRenderer , "assets/texture/theme3/vide3.png");
+    themes[2].piont[1] = IMG_LoadTexture(gRenderer , "assets/texture/theme3/X3.png");
+    themes[2].piont[2] = IMG_LoadTexture(gRenderer , "assets/texture/theme3/O3.png");
     
-    themes[0].couleur = {0, 0, 0};
+    themes[0].couleur = {0, 0, 0,10};
     themes[1].couleur = {10, 10, 44};
     themes[2].couleur = {144, 238, 144};
 
