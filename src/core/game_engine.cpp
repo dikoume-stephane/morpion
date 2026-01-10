@@ -1,6 +1,5 @@
 #include "core/game_engine.h"
 #include <iostream>
-#include <sstream>
 
 namespace Morpion
 {
@@ -144,14 +143,14 @@ namespace Morpion
             {
                 SDL_Point mouse = {static_cast<int>(even.button.x) , static_cast<int>(even.button.y)};
 
-                for ( i = 0; i < gGrilleTaile*gGrilleTaile; i++)
-                {
+                for ( i = 0; i < grille.size(); i++)
+                { 
                     if (SDL_PointInFRect(&mouse , &grille.at(i).cadre))
                     {
                         if (grille.at(i).etat == 0 )
                         {
-                            grille.at(i).etat = player;
-                            player = (player == 1) ? 2 : 1;
+                            grille.at(i).etat = Idplayer;
+                            Idplayer = (Idplayer == 1) ? 2 : 1;
                         }
                     }
                 }
@@ -206,27 +205,6 @@ namespace Morpion
             }
 
         }
-
-       /* void Game::loadbord()
-        {
-            float x=250.0f , y=101.0f;
-            int a = 0, i, j;
-            float c =x,b =y;
-            const float taille=250.0f;
-            //remplir le tableau de rectangle avec des coordonées variables 
-            for(i=0 ;i<3 ;i++)
-            {
-                for(j=0 ;j<3 ;j++)
-                {
-                    bord[a].cadre={c,b,taille,taille};
-                    c= c+taille+7;
-                    a++;
-                }
-                c= x;
-                b= b+taille+7;
-        
-            }
-        }*/
 
         // 📊 INTERFACE UTILISATEUR
         void Game::RenderUI()
@@ -327,11 +305,50 @@ namespace Morpion
             grille.clear();
 
             //on reinitialise le joueur
-            player = 1;
+            Idplayer = 1;
 
             //on recharge
             loadGrille(h, w, gGrilleTaile);
 
+        }
+
+        bool Game::analyseSegment(const std::vector<Case> grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants)
+        {
+            for (int k = 0; k < gGrilleTaile; k++)
+            {
+                int idx = depart + (k * pas);
+                if (grille[idx].etat != Idplayer) return false;
+            }
+
+            if (indiceGagants)
+            {
+                for (int k = 0; k < gGrilleTaile; k++)
+                {
+                    indiceGagants->push_back(depart + (k * pas));
+                }
+            }
+            return true;
+        }
+
+        bool Game::checkwin(const std::vector<Case> grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants = nullptr)
+        {
+            //lignes
+            for (int r = 0; r < gGrilleTaile; r++)
+            {
+                if (analyseSegment(grille, r * gGrilleTaile, 1, gGrilleTaile, Idplayer, indiceGagants)) return true;
+            }
+
+            //colonnes
+            for (int r = 0; r < gGrilleTaile; r++)
+            {
+                if (analyseSegment(grille, r, gGrilleTaile, gGrilleTaile, Idplayer, indiceGagants)) return true;
+            }
+
+            //diagonales
+            if (analyseSegment(grille, 0, gGrilleTaile + 1, gGrilleTaile, Idplayer, indiceGagants)) return true;
+            if (analyseSegment(grille, gGrilleTaile - 1, gGrilleTaile - 1, gGrilleTaile, Idplayer, indiceGagants)) return true;
+
+            return false;
         }
 
         bool SDL_PointInFRect(SDL_Point* p ,SDL_FRect* r )
