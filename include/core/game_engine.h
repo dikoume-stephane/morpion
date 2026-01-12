@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "player.h"
 #include "../graphics/window.h"
 #include "../../libs/imgui/imgui.h"
 #include "../../libs/imgui/backends/imgui_impl_sdl3.h"
@@ -10,17 +11,28 @@ namespace Morpion {namespace Core { class Player;}}
 namespace Morpion {
 namespace Core {
 
+    enum class GameState {
+        MENU,
+        PLAYING,
+        GAMEOVER
+    };
+
 class Game {
 private:
     // 🔒 ÉTAT DU MOTEUR
     Graphics::Window gWindow;
     SDL_Renderer* grenderer;
+    Player* joueur1;
+    Player* joueur2;
+    Player* joueuractuel;
     Morpion::Core::theme CurrentTheme;
     bool gRunningstatus;
-    bool gIsPaused;
-    int gGrilleTaile =6;
+    int IAlevel = 0;
+    int gGrilleTaile = 3;
+    int modeselect = 1;
     std::vector<Case> grille;
     std::vector<int> indiceGagants;
+    GameState Etatactuel = Morpion::Core::GameState::MENU;
 
 public:
     int Idplayer = 1;
@@ -31,6 +43,7 @@ public:
     
     // ⚙️ MÉTHODES PRINCIPALES
     bool Initialize();
+    void InitialiserPartie(int mode, int tailleGrille, int nivdif);
     void Run();
     void Shutdown();
     void loadGrille(float hauteur, float largeur, int taille);
@@ -40,8 +53,8 @@ public:
     void HandleInput(SDL_Event even);
 
     //LOGIQUE DU JEU 
-    static bool checkwin(const std::vector<Case> grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants = nullptr);
-    static bool analyseSegment(const std::vector<Case> grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants);
+    static bool checkwin(const std::vector<Case>& grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants = nullptr);
+    static bool analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants);
 
 private:
     // MÉTHODES INTERNES

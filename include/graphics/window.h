@@ -20,7 +20,7 @@ private:
     std::string gTitle;
 
 public: 
-    int gThemeIs;
+    int gThemeIs = 1;
     Morpion::Core::theme themes[3];
     // 🏗 CONSTRUCTEUR/DESTRUCTEUR 
     Window(const std::string& title, float width, float height); 

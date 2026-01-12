@@ -28,6 +28,15 @@ namespace Morpion
         // Le Cerveau Principal de l'IA
 
         int Player::choisirCoup(const std::vector<Case>& grille) {
+
+            //au cas ou le centre n'est pas encore occupé
+            int caseoccupe = 0;
+            for (const auto& c : grille) if (c.etat != 0) caseoccupe ++;
+            if (caseoccupe < 2)
+            {
+                int centre = grille.size() / 2;
+                if (grille.at(centre).etat == 0) return centre;
+            }
             // copie de la grille (modifiable pour les ia)
             std::vector<Case>& grilleModifiable = const_cast<std::vector<Case>&>(grille);
             // Aiguillage selon la difficulté
@@ -49,14 +58,14 @@ namespace Morpion
             }
         }
 
-        // --- 3. Mode Facile (Aléatoire) ---
+        //  Mode Facile (Aléatoire)
 
         int Player::coupAleatoire(const std::vector<Case>& grille) {
             std::vector<int> casesVides;
             
             // On liste les possibilités
             for (int i = 0; i < grille.size(); i++) {
-                if (grille[i].etat == 0) {
+                if (grille.at(i).etat == 0) {
                     casesVides.push_back(i);
                 }
             }
@@ -74,13 +83,13 @@ namespace Morpion
             int meilleurCoup = -1;
             
             for (int i = 0; i < grille.size(); i++) {
-                if (grille[i].etat == 0) {
-                    grille[i].etat = ID_IA; // On joue
+                if (grille.at(i).etat == 0) {
+                    grille.at(i).etat = ID_IA; // On joue
                     
                     // On lance la récursion
                     int val = minimax(grille, profondreur, false, -200000, 200000);
                     
-                    grille[i].etat = 0; // Backtracking
+                    grille.at(i).etat = 0; 
 
                     if (val > meilleurScore) {
                         meilleurScore = val;
@@ -91,7 +100,7 @@ namespace Morpion
             return meilleurCoup;
         }
 
-        // --- 4. Le Moteur Minimax (Alpha-Bêta) ---
+        // Le Moteur Minimax (Alpha-Bêta)
 
         int Player::minimax(std::vector<Case>& virtuelle, int profondeur, bool estIA, int alpha, int beta) {
             
@@ -112,9 +121,9 @@ namespace Morpion
                 int meilleurCoup = -1;
 
                 for (int i = 0; i < virtuelle.size(); i++) {
-                    if (virtuelle[i].etat == 0) {
+                    if (virtuelle.at(i).etat == 0) {
                         // 1. Simuler
-                        virtuelle[i].etat = ID_IA;
+                        virtuelle.at(i).etat = ID_IA;
                         
                         // 2. Appel récursif (c'est au tour de l'humain maintenant)
                         // Note : Pour le tout premier appel (racine), on veut récupérer le COUP, pas le score.
@@ -122,7 +131,7 @@ namespace Morpion
                         int score = minimax(virtuelle, profondeur - 1, false, alpha, beta);
 
                         // 3. Backtracking (Nettoyage) !!!
-                        virtuelle[i].etat = 0;
+                        virtuelle.at(i).etat = 0;
 
                         // 4. Meilleur score ?
                         if (score > meilleurScore) {
@@ -146,10 +155,10 @@ namespace Morpion
             } else { // MINIMISER (Humain)
                 int meilleurScore = 100000;
                 for (int i = 0; i < virtuelle.size(); i++) {
-                    if (virtuelle[i].etat == 0) {
-                        virtuelle[i].etat = ID_HUMAIN;
+                    if (virtuelle.at(i).etat == 0) {
+                        virtuelle.at(i).etat = ID_HUMAIN;
                         int score = minimax(virtuelle, profondeur - 1, true, alpha, beta);
-                        virtuelle[i].etat = 0;
+                        virtuelle.at(i).etat = 0;
 
                         meilleurScore = std::min(meilleurScore, score);
                         beta = std::min(beta, score);
@@ -195,8 +204,8 @@ namespace Morpion
                 int idx = depart + k * pas;
                 if (idx >= grille.size()) break; // Sécurité
 
-                if (grille[idx].etat == ID_IA) nbIA++;
-                else if (grille[idx].etat == ID_HUMAIN) nbHumain++;
+                if (grille.at(idx).etat == ID_IA) nbIA++;
+                else if (grille.at(idx).etat == ID_HUMAIN) nbHumain++;
                 else nbVides++;
             }
 
@@ -219,8 +228,9 @@ namespace Morpion
 
         int Player::verifierEtatJeu(const std::vector<Case>& grille) {
             // Cette fonction doit réutiliser ta logique de victoire existante (Game::checkWin)
-            if (Game::checkwin(grille, grille.size(), ID_IA, nullptr)) return 100000;
-            if (Game::checkwin(grille, grille.size(), ID_HUMAIN, nullptr)) return -100000;
+            int taille = sqrt(grille.size());
+            if (Game::checkwin(grille, taille, ID_IA, nullptr)) return 100000;
+            if (Game::checkwin(grille, taille, ID_HUMAIN, nullptr)) return -100000;
             
             bool plein = true;
             for (const auto& c : grille)

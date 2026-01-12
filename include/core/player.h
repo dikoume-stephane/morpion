@@ -34,10 +34,12 @@ public:
     //setter
     void seticone(SDL_Texture* ico) { icone = ico;}
     void incrementerscore(){ wincounter++; }
+    void Setordilevel(int level) { ordilevel = level;}
 
     //getter
     playertype gettype() const{ return type; }
     int getscore() const{ return wincounter; }
+    int getid() const{ return Id; }
     SDL_Texture* geticone() const{ return icone; }
 
 

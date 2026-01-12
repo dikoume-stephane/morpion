@@ -8,9 +8,8 @@ namespace Morpion
 
         // 🏗 CONSTRUCTEUR
         Game::Game(const std::string& title, float width, float height)
-            : gWindow(title, width, height), grenderer(gWindow.GetRenderer()), CurrentTheme(gWindow.GetCurrentTheme()), 
-            gRunningstatus(false), 
-            gIsPaused(false) {}
+            : gWindow(title, width, height), grenderer(gWindow.GetRenderer()), joueur1(nullptr), joueur2(nullptr),
+             joueuractuel(nullptr), CurrentTheme(gWindow.GetCurrentTheme()), gRunningstatus(false) {}
 
         // ⚙️ INITIALISATION
         bool Game::Initialize()
@@ -27,8 +26,6 @@ namespace Morpion
             ImGui_ImplSDL3_InitForSDLRenderer(gWindow.GetgWindow(), grenderer);
             ImGui_ImplSDLRenderer3_Init(grenderer);
 
-            //initialisation de la grille
-            loadGrille(gWindow.GetHeight(), gWindow.GetWidth(),gGrilleTaile);
             gRunningstatus = true;
             std::cout << "✅ Moteur de jeu initialisé" << std::endl;
             return true;
@@ -82,6 +79,35 @@ namespace Morpion
             }
         }
 
+        void Game::InitialiserPartie(int mode, int tailleGrille, int nivdif)
+        {
+            //nettoyage memoire
+            if (joueur1) { delete joueur1; joueur1 = nullptr; }
+            if (joueur2) { delete joueur2; joueur2 = nullptr; }
+            //configuration de la grille
+            this->gGrilleTaile = tailleGrille;
+            grille.clear();
+            loadGrille(gWindow.GetHeight(), gWindow.GetWidth(),gGrilleTaile);
+
+            //creation des joueurs
+            joueur1 = new Player(playertype::PLAYER, 1, 0);
+
+            if (mode == 1)
+            {
+                joueur2 = new Player(playertype::ORDI, 2, 0);
+                joueur2->Setordilevel(nivdif);
+            }
+            else
+            {
+                joueur2 = new Player(playertype::PLAYER, 2, 0);
+            }
+
+            joueuractuel = joueur1;
+            Etatactuel = GameState::PLAYING;
+            std::cout<<" partie lancée !!!"<<std::endl;
+
+        }
+
         // 🎮 BOUCLE PRINCIPALE
         void Game::Run()
         {
@@ -92,6 +118,28 @@ namespace Morpion
             {
                 CurrentTheme = gWindow.GetCurrentTheme();
                 HandleEvents();
+                if (joueuractuel != nullptr && checkwin(grille, gGrilleTaile, joueuractuel->getid())) Etatactuel = GameState::GAMEOVER;
+
+                //si c'est le tour de l'IA
+                if (Etatactuel == GameState::PLAYING && joueuractuel->gettype() == playertype::ORDI)
+                {
+                    // peti delai pour que l'ia ne reponde pas instantanement
+                    SDL_Delay(500);
+
+                    int coupIA = joueuractuel->choisirCoup(grille);
+                    if (coupIA != -1)
+                    {
+                        grille.at(coupIA).etat = joueuractuel->getid();
+                        if (checkwin(grille, gGrilleTaile, joueuractuel->getid()))
+                        {
+                            Etatactuel = GameState::GAMEOVER;
+                        }
+                        else
+                        {
+                            joueuractuel = joueur1;
+                        }
+                    }
+                }
                 Render();
                 
                 // Limitation à ~60 FPS
@@ -103,6 +151,8 @@ namespace Morpion
         void Game::Shutdown()
         {
             gRunningstatus = false;
+            delete joueur1;
+            delete joueur2;
             std::cout << "arret du Moteur de jeu " << std::endl;
             IUshutdown();
         }
@@ -138,26 +188,28 @@ namespace Morpion
         void Game::HandleInput(SDL_Event even)
         {
             int i;
-            
-            if (even.button.button == SDL_BUTTON_LEFT)
+            if (joueuractuel == nullptr) return;
+            if (Etatactuel == GameState::PLAYING && joueuractuel->gettype() == playertype::PLAYER)
             {
-                SDL_Point mouse = {static_cast<int>(even.button.x) , static_cast<int>(even.button.y)};
+                if (even.button.button == SDL_BUTTON_LEFT)
+                {
+                    SDL_Point mouse = {static_cast<int>(even.button.x) , static_cast<int>(even.button.y)};
 
-                for ( i = 0; i < grille.size(); i++)
-                { 
-                    if (SDL_PointInFRect(&mouse , &grille.at(i).cadre))
-                    {
-                        if (grille.at(i).etat == 0 )
+                    for ( i = 0; i < grille.size(); i++)
+                    { 
+                        if (SDL_PointInFRect(&mouse , &grille.at(i).cadre))
                         {
-                            grille.at(i).etat = Idplayer;
-                            Idplayer = (Idplayer == 1) ? 2 : 1;
+                            if (grille.at(i).etat == 0 )
+                            {
+                                grille.at(i).etat = joueuractuel->getid();
+                                joueuractuel = (joueuractuel == joueur1) ? joueur2 : joueur1;
+                            }
                         }
                     }
+                    
+                    
                 }
-                
-                
-            }
-                
+            }   
         }
 
         
@@ -165,9 +217,12 @@ namespace Morpion
         void Game::Render()
         {
             gWindow.Clear(CurrentTheme.couleur);
-            loadvoid();
 
-            RenderT();
+            if (Etatactuel == GameState::PLAYING)
+            {
+                loadvoid();
+                RenderT();
+            }
             // Ici on ajouterait l'interface utilisateur
             RenderUI();
             
@@ -178,13 +233,15 @@ namespace Morpion
         {
             int i;
             //chargement des images en fonction du player
+            for (int j = 0 ; j < gGrilleTaile*gGrilleTaile ; j ++)
+            {
+                if ( grille.at(j).etat == 1)
+                {
+                    SDL_RenderTexture(grenderer , CurrentTheme.piont[1] , NULL , &grille.at(j).cadre);
+                }
+            }
             for (i=0 ; i < gGrilleTaile*gGrilleTaile ; i++)
             {
-                if ( grille.at(i).etat == 1)
-                {
-                    SDL_RenderTexture(grenderer , CurrentTheme.piont[1] , NULL , &grille.at(i).cadre);
-                }
-
                 if ( grille.at(i).etat == 2)
                 {
                     SDL_RenderTexture(grenderer , CurrentTheme.piont[2] , NULL , &grille.at(i).cadre);
@@ -209,80 +266,116 @@ namespace Morpion
         // 📊 INTERFACE UTILISATEUR
         void Game::RenderUI()
         {
-            int them =1;
+            int them = 1;
             // 1. Récupérer la taille actuelle de la fenêtre 
             int w, h;
             SDL_GetWindowSize(gWindow.GetgWindow(), &w, &h);
 
+            int h1 = 0.3*h, w1 = 0.5*w;
             ImGui_ImplSDLRenderer3_NewFrame();
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
 
-            // Largeur du panneau : 20% de la largeur de l'écran
-            float Lpanel = w * 0.12f; 
-            if (Lpanel < 150) Lpanel = 150;
-
-            // Hauteur du panneau : 50% de la hauteur de l'écran
-            float Hpanel = h * 0.3f;
-
-            // Position Collé à droite (Largeur écran - Largeur panneau - petite marge)
-            float posX = w - Lpanel - 4;
-            float posY = 4; // Petite marge en haut
-
-            ImGui::SetNextWindowPos(ImVec2(posX, posY), ImGuiCond_Always);
-            ImGui::SetNextWindowSize(ImVec2(Lpanel, Hpanel), ImGuiCond_Always);
-            ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-
-            ImGui::Begin("options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize );
-
-            if (ImGui::CollapsingHeader("Taille de grille"))
+            // MENU
+            if (Etatactuel == GameState::MENU)
             {
-                
-                ImGui::Indent();
-                // Bouton pour 3x3
-                if (ImGui::RadioButton("3x3", gGrilleTaile == 3))
+                ImGui::SetNextWindowPos(ImVec2(((w - w1) / 2), ((h - h1) / 2)), ImGuiCond_Always);
+                ImGui::SetNextWindowSize(ImVec2(w1, h1), ImGuiCond_Always);
+
+                ImGui::Begin("menu principale", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
+                ImGui::SeparatorText("mode de jeu");
+
+                if (ImGui::Selectable("solo VS IA", modeselect == 1)) modeselect = 1;
+                if (ImGui::Selectable("Duo (2 players)", modeselect == 2)) modeselect = 2;
+
+                ImGui::SeparatorText("taille de grille");
+                if (ImGui::RadioButton("3x3 ", gGrilleTaile == 3)) gGrilleTaile = 3;
+                ImGui::SameLine();
+                if (ImGui::RadioButton("4x4 ", gGrilleTaile == 4)) gGrilleTaile = 4;
+                ImGui::SameLine();
+                if (ImGui::RadioButton("5x5 ", gGrilleTaile == 5)) gGrilleTaile = 5;
+
+                if (modeselect == 1)
                 {
-                    changegrillsize(3, h, w);
-                }
-                // Bouton pour 4x4
-                if (ImGui::RadioButton("4x4", gGrilleTaile == 4))
-                {
-                    changegrillsize(4, h, w);
-                }
-                // Bouton pour 5x5
-                if (ImGui::RadioButton("5x5", gGrilleTaile == 5))
-                {
-                    changegrillsize(5, h, w);
+                    ImGui::SeparatorText("dificulté de l'IA");
+                    ImGui::Combo("niveau", &IAlevel, "Facile\0Intermediaire\0Imbattable\0");
                 }
 
-                ImGui::Unindent();
-            }
-
-            //ImGui::Spacing();
-            //pour les themes
-            if(ImGui::CollapsingHeader("Themes"))
+                if (ImGui::Button("LANCER LA PARTIE", ImVec2(0.4*w,0.1*h)))
+                {
+                   InitialiserPartie(modeselect, gGrilleTaile, IAlevel);
+                }
+                ImGui::End();
+            } 
+            else 
             {
-                ImGui::Indent();
-                
-                if (ImGui::Selectable("classic", them == 1))
-                {
-                    them = 1;
-                    gWindow.SetThemeIs(them);
-                }
-                if (ImGui::Selectable("galaxi", them == 2))
-                {
-                    them = 2;
-                    gWindow.SetThemeIs(them);
-                }
-                if (ImGui::Selectable("champ", them == 3))
-                {
-                    them = 3;
-                    gWindow.SetThemeIs(them);
-                }
-                ImGui::Unindent();
-            }
+                // Largeur du panneau : 12% de la largeur de l'écran
+                float Lpanel = w * 0.12f; 
+                if (Lpanel < 150) Lpanel = 150;
 
-            ImGui::End();
+                // Hauteur du panneau : 30% de la hauteur de l'écran
+                float Hpanel = h * 0.3f;
+
+                // Position Collé à droite (Largeur écran - Largeur panneau - petite marge)
+                float posX = w - Lpanel - 4;
+                float posY = 4; // Petite marge en haut
+
+                ImGui::SetNextWindowPos(ImVec2(posX, posY), ImGuiCond_Always);
+                ImGui::SetNextWindowSize(ImVec2(Lpanel, Hpanel), ImGuiCond_Always);
+                ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
+
+                ImGui::Begin("options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize );
+
+                if (ImGui::CollapsingHeader("Taille de grille"))
+                {
+                    
+                    ImGui::Indent();
+                    // Bouton pour 3x3
+                    if (ImGui::RadioButton("3x3", gGrilleTaile == 3))
+                    {
+                        changegrillsize(3, h, w);
+                    }
+                    // Bouton pour 4x4
+                    if (ImGui::RadioButton("4x4", gGrilleTaile == 4))
+                    {
+                        changegrillsize(4, h, w);
+                    }
+                    // Bouton pour 5x5
+                    if (ImGui::RadioButton("5x5", gGrilleTaile == 5))
+                    {
+                        changegrillsize(5, h, w);
+                    }
+
+                    ImGui::Unindent();
+                }
+
+                //ImGui::Spacing();
+                //pour les themes
+                if(ImGui::CollapsingHeader("Themes"))
+                {
+                    ImGui::Indent();
+                    
+                    if (ImGui::Selectable("classic", them == 1))
+                    {
+                        them = 1;
+                        gWindow.SetThemeIs(them);
+                    }
+                    if (ImGui::Selectable("galaxi", them == 2))
+                    {
+                        them = 2;
+                        gWindow.SetThemeIs(them);
+                    }
+                    if (ImGui::Selectable("champ", them == 3))
+                    {
+                        them = 3;
+                        gWindow.SetThemeIs(them);
+                    }
+                    ImGui::Unindent();
+                }
+
+                ImGui::End();
+
+            }
 
             ImGui::Render();
             ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(),grenderer);
@@ -312,12 +405,19 @@ namespace Morpion
 
         }
 
-        bool Game::analyseSegment(const std::vector<Case> grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants)
+        bool Game::analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants)
         {
             for (int k = 0; k < gGrilleTaile; k++)
             {
                 int idx = depart + (k * pas);
-                if (grille[idx].etat != Idplayer) return false;
+
+                // SÉCURITÉ : On vérifie si l'index est valide avant d'y accéder
+                if (idx < 0 || idx >= (int)grille.size()) {
+                    std::cout << "⚠️ ERREUR INDEX : Tentative d'accès à la case " << idx 
+                            << " mais la grille ne fait que " << grille.size() << " cases !" << std::endl;
+                    return false; 
+                }
+                if (grille.at(idx).etat != Idplayer) return false;
             }
 
             if (indiceGagants)
@@ -330,7 +430,7 @@ namespace Morpion
             return true;
         }
 
-        bool Game::checkwin(const std::vector<Case> grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants = nullptr)
+        bool Game::checkwin(const std::vector<Case>& grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants)
         {
             //lignes
             for (int r = 0; r < gGrilleTaile; r++)
