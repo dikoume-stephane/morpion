@@ -22,6 +22,7 @@ private:
 public: 
     int gThemeIs = 1;
     Morpion::Core::theme themes[3];
+    SDL_Texture* BGtexture = nullptr;
     // 🏗 CONSTRUCTEUR/DESTRUCTEUR 
     Window(const std::string& title, float width, float height); 
     ~Window(); 

@@ -6,8 +6,10 @@ import subprocess
 print("=== demarrage du script Morpion ===")
 
 COMPILER = "g++"
+SRCTOOL1 = "windres"
+SRCTOOL2= "-O coff"
 INCLUSION = "-Iinclude"
-SOURCE_DIRS = ["src", "libs/imgui"]
+RACINE = os.path.dirname(os.path.abspath(__file__))
 BUILD_DIR = "build"
 EXECUTABLE = os.path.join(BUILD_DIR, "morpion.exe")
 
@@ -21,13 +23,16 @@ def build_et_run():
     configurer_sdl()
     tous_objets = []
     fichiers_a_compiler = []
-
+    dossiers_a_scanner = [RACINE]
+    dossiers_a_sauter = ["include", "build", "assets", ".git"]
     # On parcourt chaque dossier de la liste blanche
-    for dossier in SOURCE_DIRS:
+    for dossier in dossiers_a_scanner:
         # On vérifie si le dossier existe pour éviter que le script ne plante 🛑
         if os.path.exists(dossier):
             # os.walk va descendre dans tous les sous-dossiers (ex: src/core)
             for racine, dossiers, fichiers in os.walk(dossier):
+                if any(skip in racine for skip in dossiers_a_sauter):
+                    continue
                 for fichier in fichiers:
                     # On ne garde que les fichiers qui se terminent par .cpp
                     if fichier.endswith(".cpp"):
@@ -38,12 +43,27 @@ def build_et_run():
                         if doit_compiler(chemin_complet, obj):
                             fichiers_a_compiler.append((chemin_complet, obj))
                             print(f"Trouvé : {chemin_complet}")
+                    if fichier.endswith(".rc"):
+                        chemin_complet = os.path.join(racine, fichier)
+                        objs=os.path.join(BUILD_DIR, fichier.replace(".rs", ".o"))
+                        tous_objets.append(objs)
+                        if doit_compiler(chemin_complet, objs):
+                            fichiers_a_compiler.append((chemin_complet, objs))
+                            print(f"Trouvé : {chemin_complet}")
 
     # Petit affichage pour vérifier le nombre de fichier trouvés
     print(f"✅ {len(fichiers_a_compiler)} fichiers source trouvés.")
 
     # 2. Compiler les fichiers modifiés
     for src, obj in fichiers_a_compiler:
+        if src.endswith(".rc"):
+            # Commande pour les ressources
+            print(f"🔨 Compilation des ressources : {src}")
+            res = subprocess.run([SRCTOOL1, "-i", src, "-o", obj, "-O", "coff"])
+            if res.returncode != 0:
+                print("💥 Erreur de compilation des ressources.")
+                sys.exit(1)
+            continue
         print(f"🔨 Compilation : {src}")
         res = subprocess.run([COMPILER, INCLUSION, "-c", src, "-o", obj] + CFLAGS)
         if res.returncode != 0:

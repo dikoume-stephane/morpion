@@ -88,6 +88,13 @@ void Window::loadthemes()
     themes[1].couleur = {10, 10, 44};
     themes[2].couleur = {144, 238, 144};
 
+    //pour le fond
+    BGtexture =  IMG_LoadTexture(gRenderer, "assets/texture/backgroud.png");
+    if (!BGtexture)
+    {
+        std::cerr <<"erreur de chargement de l'image de fond "<<SDL_GetError()<<std::endl;
+    }
+
     for (int i=0 ; i<3 ; i++)
     {
         for (int j=0 ; j<3 ; j++)

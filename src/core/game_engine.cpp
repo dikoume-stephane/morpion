@@ -23,8 +23,23 @@ namespace Morpion
 
             //initialisation des composantes imgui
             ImGui::CreateContext();
+            ImGuiIO& io = ImGui::GetIO();
+            io.Fonts->AddFontFromFileTTF("assets/polices/Sekuya-Regular.ttf", 17.0f);
             ImGui_ImplSDL3_InitForSDLRenderer(gWindow.GetgWindow(), grenderer);
             ImGui_ImplSDLRenderer3_Init(grenderer);
+
+            ImGuiStyle& style = ImGui::GetStyle();
+
+            style.WindowRounding = 9.0f; // Arrondi de la fenêtre
+            style.FrameRounding = 8.0f;  // Arrondi des boutons et cases de saisie
+            style.GrabRounding = 8.0f;   // Arrondi des curseurs
+            style.PopupRounding = 10.0f; // Arrondi des menus surgissants
+            
+            // enlever les bordures brusques
+            //style.WindowBorderSize = 0.0f;
+            //style.FrameBorderSize = 1.0f;
+            style.ButtonTextAlign = ImVec2(0.5f, 0.5f);
+            style.SelectableTextAlign = ImVec2(0.5f, 0.5f);
 
             gRunningstatus = true;
             std::cout << "✅ Moteur de jeu initialisé" << std::endl;
@@ -124,19 +139,21 @@ namespace Morpion
                 if (Etatactuel == GameState::PLAYING && joueuractuel->gettype() == playertype::ORDI)
                 {
                     // peti delai pour que l'ia ne reponde pas instantanement
-                    SDL_Delay(500);
-
-                    int coupIA = joueuractuel->choisirCoup(grille);
-                    if (coupIA != -1)
+                    Uint32 currentTime = SDL_GetTicks();
+                    if (currentTime - timeOfLastMove >= 700)
                     {
-                        grille.at(coupIA).etat = joueuractuel->getid();
-                        if (checkwin(grille, gGrilleTaile, joueuractuel->getid()))
+                        int coupIA = joueuractuel->choisirCoup(grille);
+                        if (coupIA != -1)
                         {
-                            Etatactuel = GameState::GAMEOVER;
-                        }
-                        else
-                        {
-                            joueuractuel = joueur1;
+                            grille.at(coupIA).etat = joueuractuel->getid();
+                            if (checkwin(grille, gGrilleTaile, joueuractuel->getid()))
+                            {
+                                Etatactuel = GameState::GAMEOVER;
+                            }
+                            else
+                            {
+                                joueuractuel = joueur1;
+                            }
                         }
                     }
                 }
@@ -202,6 +219,8 @@ namespace Morpion
                             if (grille.at(i).etat == 0 )
                             {
                                 grille.at(i).etat = joueuractuel->getid();
+                                timeOfLastMove = SDL_GetTicks(); // Enregistre le moment du clic
+                                waitingForIA = (joueur2->gettype() == playertype::ORDI); 
                                 joueuractuel = (joueuractuel == joueur1) ? joueur2 : joueur1;
                             }
                         }
@@ -224,6 +243,10 @@ namespace Morpion
                 RenderT();
             }
             // Ici on ajouterait l'interface utilisateur
+            if (Etatactuel == GameState::MENU)
+            {
+                SDL_RenderTexture(grenderer, gWindow.BGtexture, NULL, NULL);
+            }
             RenderUI();
             
             gWindow.Present();
@@ -271,7 +294,7 @@ namespace Morpion
             int w, h;
             SDL_GetWindowSize(gWindow.GetgWindow(), &w, &h);
 
-            int h1 = 0.3*h, w1 = 0.5*w;
+            int h1 = 0.4*h, w1 = 0.5*w;
             ImGui_ImplSDLRenderer3_NewFrame();
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
@@ -281,30 +304,52 @@ namespace Morpion
             {
                 ImGui::SetNextWindowPos(ImVec2(((w - w1) / 2), ((h - h1) / 2)), ImGuiCond_Always);
                 ImGui::SetNextWindowSize(ImVec2(w1, h1), ImGuiCond_Always);
+                ImGui::SetNextWindowBgAlpha(0.2f);
+                ImGui::Begin("menu principale", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar);
+                CenteredText("Morpion Pro");
 
-                ImGui::Begin("menu principale", nullptr, ImGuiWindowFlags_AlwaysAutoResize);
-                ImGui::SeparatorText("mode de jeu");
+                ImGui::NewLine();
+                CenteredText("mode de jeu");
 
                 if (ImGui::Selectable("solo VS IA", modeselect == 1)) modeselect = 1;
                 if (ImGui::Selectable("Duo (2 players)", modeselect == 2)) modeselect = 2;
+                ImGui::Spacing();
+                ImGui::Spacing();
 
-                ImGui::SeparatorText("taille de grille");
+                CenteredText("taille de grille");
+                float windW = ImGui::GetWindowSize().x;
+                ImGui::SetCursorPosX((windW - windW*0.4) * 0.5f);
                 if (ImGui::RadioButton("3x3 ", gGrilleTaile == 3)) gGrilleTaile = 3;
                 ImGui::SameLine();
                 if (ImGui::RadioButton("4x4 ", gGrilleTaile == 4)) gGrilleTaile = 4;
                 ImGui::SameLine();
                 if (ImGui::RadioButton("5x5 ", gGrilleTaile == 5)) gGrilleTaile = 5;
+                ImGui::Spacing();
+                ImGui::Spacing();
 
+                
                 if (modeselect == 1)
                 {
-                    ImGui::SeparatorText("dificulté de l'IA");
+                    CenteredText("dificulté de l'IA");
+                    float windowW = ImGui::GetWindowSize().x;
+                    ImGui::SetCursorPosX((windowW - windowW*0.4) * 0.5f);
                     ImGui::Combo("niveau", &IAlevel, "Facile\0Intermediaire\0Imbattable\0");
+                    ImGui::Spacing();
                 }
 
+                ImGui::NewLine();
+                float windowWidth = ImGui::GetWindowSize().x;
+                ImGui::SetCursorPosX((windowWidth - 0.4*w) * 0.5f);
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.60f, 0.85f, 0.10f, 1.00f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.70f, 1.00f, 0.20f, 1.00f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.50f, 0.75f, 0.00f, 1.00f));
                 if (ImGui::Button("LANCER LA PARTIE", ImVec2(0.4*w,0.1*h)))
                 {
                    InitialiserPartie(modeselect, gGrilleTaile, IAlevel);
                 }
+                ImGui::PopStyleColor(3);
+
                 ImGui::End();
             } 
             else 
@@ -379,6 +424,16 @@ namespace Morpion
 
             ImGui::Render();
             ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(),grenderer);
+        }
+
+        void Game::CenteredText(const char* text)
+        {
+            float windowWidth = ImGui::GetWindowSize().x;
+            float textWidth = ImGui::CalcTextSize(text).x;
+            
+            // On déplace le curseur horizontalement
+            ImGui::SetCursorPosX((windowWidth - textWidth) * 0.5f);
+            ImGui::Text(text);
         }
 
         void Game::IUshutdown()

@@ -35,6 +35,8 @@ private:
     GameState Etatactuel = Morpion::Core::GameState::MENU;
 
 public:
+    Uint32 timeOfLastMove = 0;
+    bool waitingForIA = false;
     int Idplayer = 1;
     
 public:
@@ -62,6 +64,7 @@ private:
     void RenderT();
     void loadvoid();
     void RenderUI();
+    void CenteredText(const char* text);
     void IUshutdown();
     void changegrillsize(int nouvTaille, float h, float w);
 };
