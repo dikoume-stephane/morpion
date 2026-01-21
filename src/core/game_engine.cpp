@@ -20,7 +20,6 @@ namespace Morpion
                 return false;
             }
             grenderer = gWindow.GetRenderer();
-
             //initialisation des composantes imgui
             ImGui::CreateContext();
             ImGuiIO& io = ImGui::GetIO();
@@ -49,7 +48,7 @@ namespace Morpion
         void Game::loadGrille(float hauteur, float largeur, int taille)
         {
             SDL_FRect cadre;
-            int marge = 4;
+            int marge = 10;
             
             float dimensionReference = (hauteur < largeur) ? hauteur : largeur;
             
@@ -105,16 +104,16 @@ namespace Morpion
             loadGrille(gWindow.GetHeight(), gWindow.GetWidth(),gGrilleTaile);
 
             //creation des joueurs
-            joueur1 = new Player(playertype::PLAYER, 1, 0);
+            joueur1 = new Player(playertype::PLAYER, 1, 0, Color::Red());
 
             if (mode == 1)
             {
-                joueur2 = new Player(playertype::ORDI, 2, 0);
+                joueur2 = new Player(playertype::ORDI, 2, 0, Color::Blue());
                 joueur2->Setordilevel(nivdif);
             }
             else
             {
-                joueur2 = new Player(playertype::PLAYER, 2, 0);
+                joueur2 = new Player(playertype::PLAYER, 2, 0, Color::Blue());
             }
 
             joueuractuel = joueur1;
@@ -133,7 +132,6 @@ namespace Morpion
             {
                 CurrentTheme = gWindow.GetCurrentTheme();
                 HandleEvents();
-                if (joueuractuel != nullptr && checkwin(grille, gGrilleTaile, joueuractuel->getid())) Etatactuel = GameState::GAMEOVER;
 
                 //si c'est le tour de l'IA
                 if (Etatactuel == GameState::PLAYING && joueuractuel->gettype() == playertype::ORDI)
@@ -146,9 +144,10 @@ namespace Morpion
                         if (coupIA != -1)
                         {
                             grille.at(coupIA).etat = joueuractuel->getid();
-                            if (checkwin(grille, gGrilleTaile, joueuractuel->getid()))
+                            if (checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants))
                             {
-                                Etatactuel = GameState::GAMEOVER;
+                               iawin = true;
+                                //Etatactuel = GameState::GAMEOVER;
                             }
                             else
                             {
@@ -239,6 +238,12 @@ namespace Morpion
 
             if (Etatactuel == GameState::PLAYING)
             {
+                if ((joueuractuel != nullptr && checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants)) || iawin)
+                {
+                    bordurecasegagnantes(grenderer, indiceGagants, joueuractuel->getwincolor(), grille);
+                    //Etatactuel = GameState::GAMEOVER;
+                    
+                }
                 loadvoid();
                 RenderT();
             }
@@ -284,6 +289,41 @@ namespace Morpion
                 }
             }
 
+        }
+
+        void Game::bordurecasegagnantes(SDL_Renderer* renderer, std::vector<int>& indiceGagants, Color couleurjoueur, std::vector<Case>& grille)
+        {
+            // FORCE LE MODE ICI (car ImGui peut le changer)
+            SDL_SetRenderDrawBlendMode(renderer, SDL_BLENDMODE_BLEND);
+            // 1. Gestion du temps pour l'effet visuel 🌊
+            // On utilise un sinus pour faire varier l'opacité entre 50% et 100% de la valeur initiale
+            float temps = SDL_GetTicks() * 0.0041f; 
+            float oscillation = (sinf(temps) + 1.0f) / 2.0f; // Donne une valeur entre 0.0 et 1.0
+            
+            // On applique l'oscillation au canal Alpha
+            Uint8 alphaAnime = (Uint8)(couleurjoueur.a * (0.3f + 0.8f * oscillation));
+            SDL_SetRenderDrawColor(renderer, couleurjoueur.r, couleurjoueur.g, couleurjoueur.b, alphaAnime);
+
+            // 2. Dessin des bordures pour chaque case gagnante
+            for (int idx : indiceGagants) {
+                // Sécurité : on vérifie que l'indice est bien dans la grille
+                if (idx >= 0 && idx < (int)grille.size()) {
+                    const SDL_FRect& r = grille[idx].cadre;
+
+                    // 3. Calcul de l'épaisseur proportionnelle (10% de la largeur) 📐
+                    float epaisseur = r.w * 0.02f;
+
+                    // 4. Création du rectangle de bordure (Option B : plus large que la case)
+                    SDL_FRect rectBordure;
+                    rectBordure.x = r.x - epaisseur;
+                    rectBordure.y = r.y - epaisseur;
+                    rectBordure.w = r.w + (epaisseur * 2.0f);
+                    rectBordure.h = r.h + (epaisseur * 2.0f);
+
+                    // 5. Rendu du rectangle plein
+                    SDL_RenderFillRect(renderer, &rectBordure);
+                }
+            }
         }
 
         // 📊 INTERFACE UTILISATEUR
@@ -477,6 +517,7 @@ namespace Morpion
 
             if (indiceGagants)
             {
+                indiceGagants->clear();
                 for (int k = 0; k < gGrilleTaile; k++)
                 {
                     indiceGagants->push_back(depart + (k * pas));

@@ -25,19 +25,22 @@ private:
     bool isactive;
     int Id;
     int ordilevel;
+    Color wincolor;
     SDL_Texture* icone = nullptr;
 
 public:
     //constructeur
-    Player(playertype type, int Id, int wincounter);
+    Player(playertype type, int Id, int wincounter, Color wincolor);
 
     //setter
     void seticone(SDL_Texture* ico) { icone = ico;}
+    void Setwinclor(Color couleur) { wincolor = couleur; }
     void incrementerscore(){ wincounter++; }
     void Setordilevel(int level) { ordilevel = level;}
 
     //getter
     playertype gettype() const{ return type; }
+    Color getwincolor() const { return wincolor;}
     int getscore() const{ return wincounter; }
     int getid() const{ return Id; }
     SDL_Texture* geticone() const{ return icone; }

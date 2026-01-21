@@ -1,6 +1,7 @@
 #pragma once
 
 #include <vector>
+#include "structs.h"
 #include "player.h"
 #include "../graphics/window.h"
 #include "../../libs/imgui/imgui.h"
@@ -38,6 +39,7 @@ public:
     Uint32 timeOfLastMove = 0;
     bool waitingForIA = false;
     int Idplayer = 1;
+    bool iawin = false;
     
 public:
     // 🏗 CONSTRUCTEUR
@@ -67,6 +69,7 @@ private:
     void CenteredText(const char* text);
     void IUshutdown();
     void changegrillsize(int nouvTaille, float h, float w);
+    void bordurecasegagnantes(SDL_Renderer* renderer, std::vector<int>& indiceGagants, Color couleurjoueur, std::vector<Case>& grille);
 };
 bool SDL_PointInFRect(SDL_Point* p ,SDL_FRect* r );
 

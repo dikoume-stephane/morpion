@@ -13,8 +13,8 @@ namespace Morpion
         const int ID_IA = 2;
 
         //CONSTRUCTEUR
-        Player::Player(playertype t, int id, int wincount) 
-        : type(t), Id(id), wincounter(wincount), 
+        Player::Player(playertype t, int id, int wincount, Color col) 
+        : type(t), Id(id), wincounter(wincount), wincolor(col),
         icone(nullptr), isactive(false) {
 
             // Initialisation du générateur aléatoire (à faire une seule fois idéalement dans le main, mais ok ici)
