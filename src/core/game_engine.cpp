@@ -147,7 +147,6 @@ namespace Morpion
                             if (checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants))
                             {
                                iawin = true;
-                                //Etatactuel = GameState::GAMEOVER;
                             }
                             else
                             {
@@ -241,7 +240,12 @@ namespace Morpion
                 if ((joueuractuel != nullptr && checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants)) || iawin)
                 {
                     bordurecasegagnantes(grenderer, indiceGagants, joueuractuel->getwincolor(), grille);
-                    //Etatactuel = GameState::GAMEOVER;
+                    if (momentVictoire == 0) momentVictoire = SDL_GetTicks();
+                    // 1. On attend un petit délai (ex: 2s) pour laisser l'animation de victoire respirer
+                    if ((SDL_GetTicks() - momentVictoire) >= 3000)
+                    {
+                        Etatactuel = GameState::GAMEOVER;
+                    }
                     
                 }
                 loadvoid();
@@ -462,6 +466,12 @@ namespace Morpion
 
             }
 
+            //message de fin de partie
+            if (Etatactuel == GameState::GAMEOVER)
+            {
+                AfficherFinDePartie();
+            }
+
             ImGui::Render();
             ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(),grenderer);
         }
@@ -498,6 +508,89 @@ namespace Morpion
             //on recharge
             loadGrille(h, w, gGrilleTaile);
 
+        }
+
+        void Game::AfficherFinDePartie()
+        {
+            // 2. Configuration du Popup
+            ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+            ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
+            ImGui::SetNextWindowSize(ImVec2(350, 250)); // Un peu plus large pour les icônes
+            
+            // On force l'ouverture du popup une seule fois au passage en GAMEOVER
+            if (Etatactuel == GameState::GAMEOVER && !ImGui::IsPopupOpen("Resultat")) {
+                ImGui::OpenPopup("Resultat");
+            }
+
+            if (ImGui::BeginPopupModal("Resultat", NULL, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoTitleBar)) 
+            {
+                // --- TEXTE DU GAGNANT ---
+                ImGui::Spacing();
+                std::string msg = (joueuractuel->getid() == 1) ? "JOUEUR 1 A GAGNE !" : "JOUEUR 2 A GAGNE !";
+                if (iawin) msg = "L'ORDINATEUR A GAGNE !";
+                
+                CenteredText(msg.c_str());
+                ImGui::Separator();
+                ImGui::Spacing();
+
+                // --- BOUTON RECOMMENCER (BLEU) ---
+                // On change temporairement la couleur du bouton
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
+                
+                // ImageButton : ID unique, Texture, Taille, UVs, Bordure, Fond, Teinte
+                if (ImGui::ImageButton("##retry", (ImTextureID)CurrentTheme.home, ImVec2(32, 32))) {
+                    ResetPartie();
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine(); 
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8); // Aligner le texte avec l'icône
+                ImGui::Text("RECOMMENCER");
+                
+                ImGui::PopStyleColor(2);
+
+                ImGui::Spacing();
+
+                // --- BOUTON MENU PRINCIPAL (ROUGE) ---
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
+
+                if (ImGui::ImageButton("##menu", (ImTextureID)CurrentTheme.home, ImVec2(32, 32))) {
+                    Etatactuel = GameState::MENU;
+                    ResetPartie();
+                    ImGui::CloseCurrentPopup();
+                }
+                ImGui::SameLine();
+                ImGui::SetCursorPosY(ImGui::GetCursorPosY() + 8);
+                ImGui::Text("MENU PRINCIPAL");
+
+                ImGui::PopStyleColor(2);
+
+                ImGui::EndPopup();
+            }
+        }
+
+        void Game::ResetPartie()
+        {
+            // 1. Vider les indices gagnants pour arrêter le dessin des bordures
+            indiceGagants.clear(); 
+            
+            // 2. Remettre l'IA à zéro
+            iawin = false;
+
+            //on annule la victoire
+            momentVictoire = 0;
+            
+            // 3. Réinitialiser la grille
+            for(auto& c : grille) {
+                c.etat = 0;
+            }
+
+            // 4. Repasser en mode jeu (si on n'est pas retourné au menu)
+            if (Etatactuel != GameState::MENU) {
+                Etatactuel = GameState::PLAYING;
+                joueuractuel = joueur1; // Le joueur 1 recommence
+            }
         }
 
         bool Game::analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants)

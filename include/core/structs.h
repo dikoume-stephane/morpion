@@ -34,8 +34,9 @@ struct Case
 struct theme
 {
     SDL_Texture* piont[3];
+    SDL_Texture* home;
     Color couleur;
-    theme() {piont[0]=piont[1]=piont[2]=nullptr; couleur;}
+    theme() {home = piont[0] = piont[1] = piont[2] = nullptr; couleur;}
 };
 
 } // namespace Core 
