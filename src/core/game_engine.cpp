@@ -136,25 +136,29 @@ namespace Morpion
                 //si c'est le tour de l'IA
                 if (Etatactuel == GameState::PLAYING && joueuractuel->gettype() == playertype::ORDI)
                 {
-                    // peti delai pour que l'ia ne reponde pas instantanement
-                    Uint32 currentTime = SDL_GetTicks();
-                    if (currentTime - timeOfLastMove >= 700)
+                    if (!winner)
                     {
-                        int coupIA = joueuractuel->choisirCoup(grille);
-                        if (coupIA != -1)
+                        // peti delai pour que l'ia ne reponde pas instantanement
+                        Uint32 currentTime = SDL_GetTicks();
+                        if (currentTime - timeOfLastMove >= 700)
                         {
-                            grille.at(coupIA).etat = joueuractuel->getid();
-                            if (checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants))
+                            int coupIA = joueuractuel->choisirCoup(grille);
+                            if (coupIA != -1)
                             {
-                               iawin = true;
-                            }
-                            else
-                            {
-                                joueuractuel = joueur1;
+                                grille.at(coupIA).etat = joueuractuel->getid();
+                                if (checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants, &winner))
+                                {
+                                iawin = true;
+                                }
+                                else
+                                {
+                                    joueuractuel = joueur1;
+                                }
                             }
                         }
                     }
                 }
+                    
                 Render();
                 
                 // Limitation à ~60 FPS
@@ -206,25 +210,28 @@ namespace Morpion
             if (joueuractuel == nullptr) return;
             if (Etatactuel == GameState::PLAYING && joueuractuel->gettype() == playertype::PLAYER)
             {
-                if (even.button.button == SDL_BUTTON_LEFT)
+                if (!winner)
                 {
-                    SDL_Point mouse = {static_cast<int>(even.button.x) , static_cast<int>(even.button.y)};
+                    if (even.button.button == SDL_BUTTON_LEFT)
+                    {
+                        SDL_Point mouse = {static_cast<int>(even.button.x) , static_cast<int>(even.button.y)};
 
-                    for ( i = 0; i < grille.size(); i++)
-                    { 
-                        if (SDL_PointInFRect(&mouse , &grille.at(i).cadre))
-                        {
-                            if (grille.at(i).etat == 0 )
+                        for ( i = 0; i < grille.size(); i++)
+                        { 
+                            if (SDL_PointInFRect(&mouse , &grille.at(i).cadre))
                             {
-                                grille.at(i).etat = joueuractuel->getid();
-                                timeOfLastMove = SDL_GetTicks(); // Enregistre le moment du clic
-                                waitingForIA = (joueur2->gettype() == playertype::ORDI); 
-                                joueuractuel = (joueuractuel == joueur1) ? joueur2 : joueur1;
+                                if (grille.at(i).etat == 0 )
+                                {
+                                    grille.at(i).etat = joueuractuel->getid();
+                                    timeOfLastMove = SDL_GetTicks(); // Enregistre le moment du clic
+                                    waitingForIA = (joueur2->gettype() == playertype::ORDI); 
+                                    joueuractuel = (joueuractuel == joueur1) ? joueur2 : joueur1;
+                                }
                             }
                         }
+                        
+                        
                     }
-                    
-                    
                 }
             }   
         }
@@ -237,7 +244,7 @@ namespace Morpion
 
             if (Etatactuel == GameState::PLAYING)
             {
-                if ((joueuractuel != nullptr && checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants)) || iawin)
+                if ((joueuractuel != nullptr && checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants, &winner)) || iawin)
                 {
                     bordurecasegagnantes(grenderer, indiceGagants, joueuractuel->getwincolor(), grille);
                     if (momentVictoire == 0) momentVictoire = SDL_GetTicks();
@@ -575,8 +582,9 @@ namespace Morpion
             // 1. Vider les indices gagnants pour arrêter le dessin des bordures
             indiceGagants.clear(); 
             
-            // 2. Remettre l'IA à zéro
+            // 2. Remettre l'IA à zéro et winner à false
             iawin = false;
+            winner = false;
 
             //on annule la victoire
             momentVictoire = 0;
@@ -593,7 +601,7 @@ namespace Morpion
             }
         }
 
-        bool Game::analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants)
+        bool Game::analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner)
         {
             for (int k = 0; k < gGrilleTaile; k++)
             {
@@ -615,27 +623,28 @@ namespace Morpion
                 {
                     indiceGagants->push_back(depart + (k * pas));
                 }
+                *winner = true;
             }
             return true;
         }
 
-        bool Game::checkwin(const std::vector<Case>& grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants)
+        bool Game::checkwin(const std::vector<Case>& grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner)
         {
             //lignes
             for (int r = 0; r < gGrilleTaile; r++)
             {
-                if (analyseSegment(grille, r * gGrilleTaile, 1, gGrilleTaile, Idplayer, indiceGagants)) return true;
+                if (analyseSegment(grille, r * gGrilleTaile, 1, gGrilleTaile, Idplayer, indiceGagants, winner)) return true;
             }
 
             //colonnes
             for (int r = 0; r < gGrilleTaile; r++)
             {
-                if (analyseSegment(grille, r, gGrilleTaile, gGrilleTaile, Idplayer, indiceGagants)) return true;
+                if (analyseSegment(grille, r, gGrilleTaile, gGrilleTaile, Idplayer, indiceGagants, winner)) return true;
             }
 
             //diagonales
-            if (analyseSegment(grille, 0, gGrilleTaile + 1, gGrilleTaile, Idplayer, indiceGagants)) return true;
-            if (analyseSegment(grille, gGrilleTaile - 1, gGrilleTaile - 1, gGrilleTaile, Idplayer, indiceGagants)) return true;
+            if (analyseSegment(grille, 0, gGrilleTaile + 1, gGrilleTaile, Idplayer, indiceGagants, winner)) return true;
+            if (analyseSegment(grille, gGrilleTaile - 1, gGrilleTaile - 1, gGrilleTaile, Idplayer, indiceGagants, winner)) return true;
 
             return false;
         }
