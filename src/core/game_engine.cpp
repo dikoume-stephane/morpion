@@ -142,11 +142,11 @@ namespace Morpion
                         Uint32 currentTime = SDL_GetTicks();
                         if (currentTime - timeOfLastMove >= 700)
                         {
-                            int coupIA = joueuractuel->choisirCoup(grille);
+                            int coupIA = joueuractuel->choisirCoup(grille, nbAlignerPourGagner);
                             if (coupIA != -1)
                             {
                                 grille.at(coupIA).etat = joueuractuel->getid();
-                                if (checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants, &winner))
+                                if (checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants, &winner, nbAlignerPourGagner))
                                 {
                                 iawin = true;
                                 }
@@ -224,7 +224,8 @@ namespace Morpion
                                 {
                                     grille.at(i).etat = joueuractuel->getid();
                                     timeOfLastMove = SDL_GetTicks(); // Enregistre le moment du clic
-                                    waitingForIA = (joueur2->gettype() == playertype::ORDI); 
+                                    if (checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants, &winner, nbAlignerPourGagner)) break;
+                                    waitingForIA = (joueur2->gettype() == playertype::ORDI);
                                     joueuractuel = (joueuractuel == joueur1) ? joueur2 : joueur1;
                                 }
                             }
@@ -244,7 +245,7 @@ namespace Morpion
 
             if (Etatactuel == GameState::PLAYING)
             {
-                if ((joueuractuel != nullptr && checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants, &winner)) || iawin)
+                if ((joueuractuel != nullptr && checkwin(grille, gGrilleTaile, joueuractuel->getid(), &indiceGagants, &winner, nbAlignerPourGagner)) || iawin)
                 {
                     bordurecasegagnantes(grenderer, indiceGagants, joueuractuel->getwincolor(), grille);
                     if (momentVictoire == 0) momentVictoire = SDL_GetTicks();
@@ -339,16 +340,64 @@ namespace Morpion
 
         // 📊 INTERFACE UTILISATEUR
         void Game::RenderUI()
-        {
-            int them = 1;
-            // 1. Récupérer la taille actuelle de la fenêtre 
+        {   
             int w, h;
             SDL_GetWindowSize(gWindow.GetgWindow(), &w, &h);
-
-            int h1 = 0.4*h, w1 = 0.5*w;
             ImGui_ImplSDLRenderer3_NewFrame();
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
+
+            // 1. MasterCanvas Invisible
+            ImGui::SetNextWindowPos(ImVec2(0, 0));
+            ImGui::SetNextWindowSize(ImVec2((float)w, (float)h));
+            ImGui::Begin("Canvas", nullptr, 
+                ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | 
+                ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | 
+                ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
+        
+            // 2. Avatars avec Bordures
+            if (Etatactuel != GameState::MENU)
+            {
+                float size = (h > w) ? h : w;
+                float panelz = size * 0.1f;
+                float posY = (h - panelz) / 2.0f; 
+                float margin = 20.0f;
+        
+                // On définit l'épaisseur de la bordure pour ces deux fenêtres
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 2.0f);
+                ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Bordure blanche
+                ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Fond Rouge
+        
+                // FLAGS : NoTitleBar enlève les boutons (fermer/réduire) et le nom
+                // NoResize et NoMove empêchent l'utilisateur de les déformer
+                ImGuiWindowFlags avatarFlags = ImGuiWindowFlags_NoTitleBar | 
+                                              ImGuiWindowFlags_NoResize | 
+                                              ImGuiWindowFlags_NoMove | 
+                                              ImGuiWindowFlags_NoCollapse;
+        
+                // Fenêtre Joueur 1
+                ImGui::SetNextWindowPos(ImVec2(margin, posY));
+                ImGui::SetNextWindowSize(ImVec2(panelz, panelz));
+                ImGui::Begin("Avatar_J1", nullptr, avatarFlags);
+                    CenteredText("JOUEUR 1");
+                ImGui::End();
+        
+                // Fenêtre Joueur 2
+                ImGui::SetNextWindowPos(ImVec2(w - panelz - margin, posY));
+                ImGui::SetNextWindowSize(ImVec2(panelz, panelz));
+                ImGui::Begin("Avatar_J2", nullptr, avatarFlags);
+                    CenteredText(modeselect == 1 ? "IA" : "JOUEUR 2");
+                ImGui::End();
+        
+                // On nettoie les styles pour ne pas affecter les autres fenêtres
+                ImGui::PopStyleColor(2);
+                ImGui::PopStyleVar();
+            }
+        
+            ImGui::End(); // Fin Canvas
+            int them = 1;
+
+            int h1 = 0.4*h, w1 = 0.5*w;
 
             // MENU
             if (Etatactuel == GameState::MENU)
@@ -375,6 +424,20 @@ namespace Morpion
                 if (ImGui::RadioButton("4x4 ", gGrilleTaile == 4)) gGrilleTaile = 4;
                 ImGui::SameLine();
                 if (ImGui::RadioButton("5x5 ", gGrilleTaile == 5)) gGrilleTaile = 5;
+                ImGui::Spacing();
+            
+                CenteredText("Type de victoire");
+                ImGui::SetCursorPosX((windW - windW*0.4) * 0.5f);
+                if (gGrilleTaile == 4) {
+                    ImGui::RadioButton("3 alignés", &nbAlignerPourGagner, 3); ImGui::SameLine();
+                    ImGui::RadioButton("4 alignés", &nbAlignerPourGagner, 4);
+                } else if (gGrilleTaile == 5) {
+                    ImGui::RadioButton("4 alignés", &nbAlignerPourGagner, 4); ImGui::SameLine();
+                    ImGui::RadioButton("5 alignés", &nbAlignerPourGagner, 5);
+                } else {
+                    nbAlignerPourGagner = 3; // Forcé pour 3x3
+                    ImGui::Text("3 alignements requis");
+                }
                 ImGui::Spacing();
                 ImGui::Spacing();
 
@@ -601,50 +664,71 @@ namespace Morpion
             }
         }
 
-        bool Game::analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner)
+        bool Game::analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner, int nbRequis)
         {
+            std::vector<int> suiteActuelle;
+
             for (int k = 0; k < gGrilleTaile; k++)
             {
                 int idx = depart + (k * pas);
 
-                // SÉCURITÉ : On vérifie si l'index est valide avant d'y accéder
-                if (idx < 0 || idx >= (int)grille.size()) {
-                    std::cout << "⚠️ ERREUR INDEX : Tentative d'accès à la case " << idx 
-                            << " mais la grille ne fait que " << grille.size() << " cases !" << std::endl;
-                    return false; 
-                }
-                if (grille.at(idx).etat != Idplayer) return false;
-            }
+                // Sécurité index
+                if (idx < 0 || idx >= (int)grille.size()) continue;
 
-            if (indiceGagants)
-            {
-                indiceGagants->clear();
-                for (int k = 0; k < gGrilleTaile; k++)
+                if (grille.at(idx).etat == Idplayer)
                 {
-                    indiceGagants->push_back(depart + (k * pas));
+                    suiteActuelle.push_back(idx);
+                    
+                    // Si on a atteint le nombre requis de pions consécutifs
+                    if ((int)suiteActuelle.size() == nbRequis)
+                    {
+                        if (indiceGagants)
+                        {
+                            indiceGagants->clear(); // On vide pour n'avoir que les indices gagnants
+                            *indiceGagants = suiteActuelle;
+                        }
+                        if (winner) *winner = true;
+                        return true;
+                    }
                 }
-                *winner = true;
+                else
+                {
+                    // On casse la suite si on trouve une case vide ou à l'adversaire
+                    suiteActuelle.clear();
+                }
             }
-            return true;
+            return false;
         }
 
-        bool Game::checkwin(const std::vector<Case>& grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner)
+        bool Game::checkwin(const std::vector<Case>& grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner, int nbAlignerPourGagner)
         {
-            //lignes
-            for (int r = 0; r < gGrilleTaile; r++)
-            {
-                if (analyseSegment(grille, r * gGrilleTaile, 1, gGrilleTaile, Idplayer, indiceGagants, winner)) return true;
-            }
+            int n = nbAlignerPourGagner; // 3, 4 ou 5 selon ton choix au menu
 
-            //colonnes
+            // --- 1. LIGNES ---
             for (int r = 0; r < gGrilleTaile; r++)
-            {
-                if (analyseSegment(grille, r, gGrilleTaile, gGrilleTaile, Idplayer, indiceGagants, winner)) return true;
-            }
+                if (analyseSegment(grille, r * gGrilleTaile, 1, gGrilleTaile, Idplayer, indiceGagants, winner, n)) return true;
 
-            //diagonales
-            if (analyseSegment(grille, 0, gGrilleTaile + 1, gGrilleTaile, Idplayer, indiceGagants, winner)) return true;
-            if (analyseSegment(grille, gGrilleTaile - 1, gGrilleTaile - 1, gGrilleTaile, Idplayer, indiceGagants, winner)) return true;
+            // --- 2. COLONNES ---
+            for (int c = 0; c < gGrilleTaile; c++)
+                if (analyseSegment(grille, c, gGrilleTaile, gGrilleTaile, Idplayer, indiceGagants, winner, n)) return true;
+
+            // --- 3. DIAGONALES DESCENDANTES (\) ---
+            // On vérifie les diagonales partant de la première ligne
+            for (int c = 0; c <= gGrilleTaile - n; c++)
+                if (analyseSegment(grille, c, gGrilleTaile + 1, gGrilleTaile - c, Idplayer, indiceGagants, winner, n)) return true;
+            
+            // On vérifie les diagonales partant de la première colonne (en sautant le coin 0,0 déjà fait)
+            for (int r = 1; r <= gGrilleTaile - n; r++)
+                if (analyseSegment(grille, r * gGrilleTaile, gGrilleTaile + 1, gGrilleTaile - r, Idplayer, indiceGagants, winner, n)) return true;
+
+            // --- 4. DIAGONALES ASCENDANTES (/) ---
+            // On vérifie les diagonales partant de la première ligne (côté droit)
+            for (int c = n - 1; c < gGrilleTaile; c++)
+                if (analyseSegment(grille, c, gGrilleTaile - 1, c + 1, Idplayer, indiceGagants, winner, n)) return true;
+
+            // On vérifie les diagonales partant de la dernière colonne (en sautant le coin déjà fait)
+            for (int r = 1; r <= gGrilleTaile - n; r++)
+                if (analyseSegment(grille, (r * gGrilleTaile) + (gGrilleTaile - 1), gGrilleTaile - 1, gGrilleTaile - r, Idplayer, indiceGagants, winner, n)) return true;
 
             return false;
         }

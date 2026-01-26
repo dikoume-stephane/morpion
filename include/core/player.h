@@ -50,19 +50,20 @@ public:
     void reinitialize();
 
     //methode pour IA
-    int choisirCoup(const std::vector<Case>& grille);
+    int choisirCoup(const std::vector<Case>& grille, int nbrAalig);
     int coupAleatoire(const std::vector<Case>& grille);
     
     // Évalue la grille pour le Minimax (Victoire/Défaite/Nul)
-    int verifierEtatJeu(const std::vector<Case>& grille);
-    int calculMeilleurcoup(std::vector<Case>& grille, int profondreur);
+    int calculMeilleurcoup(std::vector<Case>& grille, int profondeur, int n);
+    bool aUnVoisinProche(const std::vector<Case>& grille, int index, int N);
+    bool checkwinLocal(const std::vector<Case>& grille, int dernierIdx, int N, int nRequis);
 
     // Heuristique pour le 5x5 (Score de position)
-    int scoreHeuristique(const std::vector<Case>& grille);
-    int evaluerLigne(const std::vector<Case>& grille, int depart, int pas);
+    int scoreHeuristique(const std::vector<Case>& grille, int n);
+    int evaluerSegment(const std::vector<Case>& grille, int depart, int pas, int n);
 
     // L'algorithme Minimax avec Alpha-Beta
-    int minimax(std::vector<Case>& virtuelle, int profondeur, bool estIA, int alpha, int beta);
+    int minimax(std::vector<Case>& virtuelle, int profondeur, bool estIA, int alpha, int beta, int n, int dernierCoup);
 };
 }
 }

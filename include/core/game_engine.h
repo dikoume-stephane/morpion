@@ -50,6 +50,7 @@ namespace Morpion
             bool waitingForIA = false;
             int Idplayer = 1;
             float momentVictoire = 0.f;
+            int nbAlignerPourGagner = 3;
             bool winner = false;
             bool iawin = false;
 
@@ -69,8 +70,8 @@ namespace Morpion
             void HandleInput(SDL_Event even);
 
             // LOGIQUE DU JEU
-            static bool checkwin(const std::vector<Case> &grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants = nullptr, bool* winner = nullptr);
-            static bool analyseSegment(const std::vector<Case> &grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner = nullptr);
+            static bool checkwin(const std::vector<Case>& grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner, int nbAlignerPourGagner);
+            static bool analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner, int nbRequis);
 
         private:
             // MÉTHODES INTERNES
