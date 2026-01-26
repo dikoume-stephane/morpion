@@ -31,12 +31,35 @@ struct Case
     Case(float x=0, float y=0, float w=1, float h=1, int s=0) : cadre{x,y,w,h}, etat(s) {};
 };
 
+struct textureUI
+{
+    SDL_Texture* home;
+    SDL_Texture* settings;
+    SDL_Texture* music;
+    SDL_Texture* sound;
+    SDL_Texture* no_sound;
+    SDL_Texture* music_off;
+    SDL_Texture* internet;
+
+    textureUI() {home = settings = music = sound = no_sound = music_off = internet = nullptr;}
+};
+
+struct textureUIG
+{
+    SDL_Texture* menu;
+    SDL_Texture* lightM;
+    SDL_Texture* blackM;
+    SDL_Texture* quit;
+    SDL_Texture* replay;
+    SDL_Texture* cancel;
+};
+
 struct theme
 {
     SDL_Texture* piont[3];
-    SDL_Texture* home;
+    textureUI TUI;
     Color couleur;
-    theme() {home = piont[0] = piont[1] = piont[2] = nullptr; couleur;}
+    theme() { piont[0] = piont[1] = piont[2] = nullptr; couleur;}
 };
 
 } // namespace Core 

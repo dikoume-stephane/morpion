@@ -46,10 +46,13 @@ namespace Morpion
             GameState Etatactuel = Morpion::Core::GameState::MENU;
 
         public:
+            std::vector<int> indice;
+            textureUIG icones;
             Uint32 timeOfLastMove = 0;
             bool waitingForIA = false;
             int Idplayer = 1;
             float momentVictoire = 0.f;
+            float momentmatchnull = 0;
             int nbAlignerPourGagner = 3;
             bool winner = false;
             bool iawin = false;
@@ -70,6 +73,8 @@ namespace Morpion
             void HandleInput(SDL_Event even);
 
             // LOGIQUE DU JEU
+            bool matchnull();
+            void remplirindices();
             static bool checkwin(const std::vector<Case>& grille, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner, int nbAlignerPourGagner);
             static bool analyseSegment(const std::vector<Case>& grille, int depart, int pas, int gGrilleTaile, int Idplayer, std::vector<int>* indiceGagants, bool* winner, int nbRequis);
 
@@ -78,6 +83,8 @@ namespace Morpion
             void Render();
             void RenderT();
             void loadvoid();
+            void loadicones();
+            void destroyicones();
             void RenderUI();
             void CenteredText(const char *text);
             void IUshutdown();
@@ -85,6 +92,7 @@ namespace Morpion
             void AfficherFinDePartie();
             void ResetPartie();
             void bordurecasegagnantes(SDL_Renderer *renderer, std::vector<int> &indiceGagants, Color couleurjoueur, std::vector<Case> &grille);
+            int gThemeV3(int hue07, int alt07, int nav07, int lit01, int compact01, int border01, int shape0123);
         };
         bool SDL_PointInFRect(SDL_Point *p, SDL_FRect *r);
 

@@ -83,18 +83,40 @@ void Window::loadthemes()
     themes[2].piont[0] = IMG_LoadTexture(gRenderer , "assets/texture/theme3/vide3.png");
     themes[2].piont[1] = IMG_LoadTexture(gRenderer , "assets/texture/theme3/X3.png");
     themes[2].piont[2] = IMG_LoadTexture(gRenderer , "assets/texture/theme3/O3.png");
-    themes[0].home = IMG_LoadTexture(gRenderer , "assets/texture/home.png");
 
     themes[0].couleur = {0, 0, 0,10};
     themes[1].couleur = {10, 10, 44, 15};
-    themes[2].couleur = {144, 238, 144, 0};
+    themes[2].couleur = {144, 238, 144};
+    
+    //chargement des icones par theme
 
-    //pour le fond
-    BGtexture =  IMG_LoadTexture(gRenderer, "assets/texture/backgroud.png");
-    if (!BGtexture)
-    {
-        std::cerr <<"erreur de chargement de l'image de fond "<<SDL_GetError()<<std::endl;
-    }
+    //theme1
+    themes[0].TUI.home = IMG_LoadTexture(gRenderer ,"assets/texture/theme1/marron/homem.png");
+    themes[0].TUI.internet  = IMG_LoadTexture(gRenderer ,"assets/texture/theme1/marron/internetm.png");
+    themes[0].TUI.music = IMG_LoadTexture(gRenderer ,"assets/texture/theme1/marron/musicm.png");
+    themes[0].TUI.music_off = IMG_LoadTexture(gRenderer ,"assets/texture/theme1/marron/music_offm.png");
+    themes[0].TUI.no_sound = IMG_LoadTexture(gRenderer , "assets/texture/theme1/marron/volume_offm.png");
+    themes[0].TUI.settings = IMG_LoadTexture(gRenderer ,"assets/texture/theme1/marron/settingsm.png");
+    themes[0].TUI.sound = IMG_LoadTexture(gRenderer ,"assets/texture/theme1/marron/volumem.png");
+    
+    //thme2
+    themes[1].TUI.home = IMG_LoadTexture(gRenderer ,"assets/texture/theme2/bleu/homeb.png");
+    themes[1].TUI.internet  = IMG_LoadTexture(gRenderer ,"assets/texture/theme2/bleu/internet.png");
+    themes[1].TUI.music = IMG_LoadTexture(gRenderer ,"assets/texture/theme2/bleu/musicb.png");
+    themes[1].TUI.music_off = IMG_LoadTexture(gRenderer ,"assets/texture/theme2/bleu/music_offb.png");
+    themes[1].TUI.no_sound = IMG_LoadTexture(gRenderer ,"assets/texture/theme2/bleu/volume_offb.png");
+    themes[1].TUI.settings = IMG_LoadTexture(gRenderer ,"assets/texture/theme2/bleu/settingsb.png");
+    themes[1].TUI.sound = IMG_LoadTexture(gRenderer ,"assets/texture/theme2/bleu/volumeb.png");
+
+    //theme3
+    themes[2].TUI.home = IMG_LoadTexture(gRenderer ,"assets/texture/theme3/green/homeg.png");
+    themes[2].TUI.internet  = IMG_LoadTexture(gRenderer ,"assets/texture/theme3/green/internetg.png");
+    themes[2].TUI.music = IMG_LoadTexture(gRenderer ,"assets/texture/theme3/green/musicg.png");
+    themes[2].TUI.music_off = IMG_LoadTexture(gRenderer ,"assets/texture/theme3/green/music_offg.png");
+    themes[2].TUI.no_sound = IMG_LoadTexture(gRenderer ,"assets/texture/theme3/green/volume_offg.png");
+    themes[2].TUI.settings = IMG_LoadTexture(gRenderer ,"assets/texture/theme3/green/settingsg.png");
+    themes[2].TUI.sound = IMG_LoadTexture(gRenderer ,"assets/texture/theme3/green/volumeg.png");
+
 
     for (int i=0 ; i<3 ; i++)
     {
@@ -123,8 +145,25 @@ void Window::destroythemes(Morpion::Core::theme* themes)
             }
         }
     }
-    SDL_DestroyTexture(themes[0].home);
-    themes[0].home = nullptr;
+
+    for (int i = 0; i < 3; i++)
+    {
+        SDL_DestroyTexture(themes[i].TUI.home);
+        themes[i].TUI.home = nullptr;
+        SDL_DestroyTexture(themes[i].TUI.internet);
+        themes[i].TUI.internet = nullptr;
+        SDL_DestroyTexture(themes[i].TUI.music);
+        themes[i].TUI.music = nullptr;
+        SDL_DestroyTexture(themes[i].TUI.music_off);
+        themes[i].TUI.music_off = nullptr;
+        SDL_DestroyTexture(themes[i].TUI.no_sound);
+        themes[i].TUI.no_sound = nullptr;
+        SDL_DestroyTexture(themes[i].TUI.settings);
+        themes[i].TUI.settings = nullptr;
+        SDL_DestroyTexture(themes[i].TUI.sound);
+        themes[i].TUI.sound = nullptr;
+    }
+    
 }
 
 Morpion::Core::theme Window::GetCurrentTheme()
