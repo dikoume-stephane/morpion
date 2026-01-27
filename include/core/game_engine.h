@@ -46,10 +46,16 @@ namespace Morpion
             GameState Etatactuel = Morpion::Core::GameState::MENU;
 
         public:
+            ImFont* titelfont = nullptr;
+            ImFont* winfont = nullptr;
+            ImFont* gameoverF = nullptr;
+            ImFont* menufont = nullptr;
+            ImFont* launchfont = nullptr;
             std::vector<int> indice;
             textureUIG icones;
             Uint32 timeOfLastMove = 0;
             bool waitingForIA = false;
+            bool menuisopen = false;
             int Idplayer = 1;
             float momentVictoire = 0.f;
             float momentmatchnull = 0;

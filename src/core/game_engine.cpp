@@ -23,7 +23,15 @@ namespace Morpion
             //initialisation des composantes imgui
             ImGui::CreateContext();
             ImGuiIO& io = ImGui::GetIO();
-            io.Fonts->AddFontFromFileTTF("assets/polices/Sekuya-Regular.ttf", 17.0f);
+
+            //chargement des polices
+            io.Fonts->AddFontFromFileTTF("assets/polices/Sekuya-Regular.ttf", 14.0f);
+            gameoverF = io.Fonts->AddFontFromFileTTF("assets/polices/Creepster-Regular.ttf", 40);
+            titelfont = io.Fonts->AddFontFromFileTTF("assets/polices/BILLD___.TTF", 50);
+            menufont = io.Fonts->AddFontFromFileTTF("assets/polices/ShortStack-Regular.ttf", 19);
+            winfont = io.Fonts->AddFontFromFileTTF("assets/polices/Bangers-Regular.ttf", 35);
+            launchfont = io.Fonts->AddFontFromFileTTF("assets/polices/LobsterTwo-BoldItalic.ttf", 30);
+
             ImGui_ImplSDL3_InitForSDLRenderer(gWindow.GetgWindow(), grenderer);
             ImGui_ImplSDLRenderer3_Init(grenderer);
 
@@ -385,20 +393,29 @@ namespace Morpion
         // 📊 INTERFACE UTILISATEUR
         void Game::RenderUI()
         {   
-            int w, h;
-            SDL_GetWindowSize(gWindow.GetgWindow(), &w, &h);
             ImGui_ImplSDLRenderer3_NewFrame();
             ImGui_ImplSDL3_NewFrame();
             ImGui::NewFrame();
+            
+            int w, h;
+            SDL_GetWindowSize(gWindow.GetgWindow(), &w, &h);
 
-            // 1. MasterCanvas Invisible
+            if ( Etatactuel == GameState::MENU)
+            {
+               ImGui::SetNextWindowBgAlpha(0.30);
+            }
+            // --- 1. Fenêtre principale invisible (le fond) ---
             ImGui::SetNextWindowPos(ImVec2(0, 0));
             ImGui::SetNextWindowSize(ImVec2((float)w, (float)h));
-            ImGui::Begin("Canvas", nullptr, 
+            ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0)); // Pas de marges internes
+
+            // ATTENTION : On retire NoInputs sinon on ne peut pas cliquer !
+            ImGui::Begin("MasterCanvas", nullptr, 
                 ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize | 
                 ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoScrollbar | 
-                ImGuiWindowFlags_NoInputs | ImGuiWindowFlags_NoBackground);
+                ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoBringToFrontOnFocus);
         
+            
             // 2. Avatars avec Bordures
             if (Etatactuel != GameState::MENU)
             {
@@ -438,7 +455,6 @@ namespace Morpion
                 ImGui::PopStyleVar();
             }
         
-            ImGui::End(); // Fin Canvas
             int them = 1;
 
             int h1 = 0.4*h, w1 = 0.5*w;
@@ -446,137 +462,153 @@ namespace Morpion
             // MENU
             if (Etatactuel == GameState::MENU)
             {
-                ImGui::SetNextWindowPos(ImVec2(((w - w1) / 2), ((h - h1) / 2)), ImGuiCond_Always);
-                ImGui::SetNextWindowSize(ImVec2(w1, h1), ImGuiCond_Always);
-                ImGui::SetNextWindowBgAlpha(0.2f);
-                ImGui::Begin("menu principale", nullptr, ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoBackground | ImGuiWindowFlags_NoTitleBar);
-                CenteredText("Morpion Pro");
+                // --- 2. Panneau de Gauche (Options) ---
+                float leftPanelWidth = w * 0.35f; // 35% de la largeur
+                ImGui::SetNextWindowPos(ImVec2(0, 0));
+                ImGui::SetNextWindowBgAlpha(0.8f); // Fond sombre pour la visibilité
 
-                ImGui::NewLine();
-                CenteredText("mode de jeu");
+                ImGui::BeginChild("LeftPanel", ImVec2(leftPanelWidth, (float)h), true, ImGuiWindowFlags_NoMove);
+                    ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.0f, 0.8f, 1.0f, 1.0f));
+                    ImGui::PushFont(titelfont); // Si tu as une police plus grande
+                    CenteredText("MORPION PRO");
+                    ImGui::PopFont();
+                    ImGui::PopStyleColor();
 
-                if (ImGui::Selectable("solo VS IA", modeselect == 1)) modeselect = 1;
-                if (ImGui::Selectable("Duo (2 players)", modeselect == 2)) modeselect = 2;
-                ImGui::Spacing();
-                ImGui::Spacing();
-
-                CenteredText("taille de grille");
-                float windW = ImGui::GetWindowSize().x;
-                ImGui::SetCursorPosX((windW - windW*0.4) * 0.5f);
-                if (ImGui::RadioButton("3x3 ", gGrilleTaile == 3)) gGrilleTaile = 3;
-                ImGui::SameLine();
-                if (ImGui::RadioButton("4x4 ", gGrilleTaile == 4)) gGrilleTaile = 4;
-                ImGui::SameLine();
-                if (ImGui::RadioButton("5x5 ", gGrilleTaile == 5)) gGrilleTaile = 5;
-                ImGui::Spacing();
-            
-                CenteredText("Type de victoire");
-                ImGui::SetCursorPosX((windW - windW*0.4) * 0.5f);
-                if (gGrilleTaile == 4) {
-                    ImGui::RadioButton("3 alignés", &nbAlignerPourGagner, 3); ImGui::SameLine();
-                    ImGui::RadioButton("4 alignés", &nbAlignerPourGagner, 4);
-                } else if (gGrilleTaile == 5) {
-                    ImGui::RadioButton("4 alignés", &nbAlignerPourGagner, 4); ImGui::SameLine();
-                    ImGui::RadioButton("5 alignés", &nbAlignerPourGagner, 5);
-                } else {
-                    nbAlignerPourGagner = 3; // Forcé pour 3x3
-                    ImGui::Text("3 alignements requis");
-                }
-                ImGui::Spacing();
-                ImGui::Spacing();
-
-                
-                if (modeselect == 1)
-                {
-                    CenteredText("dificulté de l'IA");
-                    float windowW = ImGui::GetWindowSize().x;
-                    ImGui::SetCursorPosX((windowW - windowW*0.4) * 0.5f);
-                    ImGui::Combo("niveau", &IAlevel, "Facile\0Intermediaire\0Imbattable\0");
+                    ImGui::Separator();
                     ImGui::Spacing();
-                }
+                    ImGui::Spacing();
+                    ImGui::Spacing();
 
-                ImGui::NewLine();
-                float windowWidth = ImGui::GetWindowSize().x;
-                ImGui::SetCursorPosX((windowWidth - 0.4*w) * 0.5f);
+                    // --- Mode de jeu ---
+                    CenteredText("MODE DE JEU");
+                    // On utilise 0 en largeur pour que le selectable prenne toute la largeur du panneau
+                    if (ImGui::Selectable(" SOLO VS IA", modeselect == 1, 0, ImVec2(0, 40))) modeselect = 1;
+                    if (ImGui::Selectable(" DUO (2 JOUEURS)", modeselect == 2, 0, ImVec2(0, 40))) modeselect = 2;
 
-                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.60f, 0.85f, 0.10f, 1.00f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.70f, 1.00f, 0.20f, 1.00f));
-                ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0.50f, 0.75f, 0.00f, 1.00f));
-                if (ImGui::Button("LANCER LA PARTIE", ImVec2(0.4*w,0.1*h)))
-                {
-                   InitialiserPartie(modeselect, gGrilleTaile, IAlevel);
+                    ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+
+                    // --- Taille Grille ---
+                    CenteredText("TAILLE DE GRILLE");
+                    float radioWidth = 150.0f; 
+                    ImGui::SetCursorPosX((leftPanelWidth - radioWidth) * 0.5f); // Centrage horizontal dans le panneau
+                    ImGui::BeginGroup();
+                        if (ImGui::RadioButton("3x3", gGrilleTaile == 3)) gGrilleTaile = 3; ImGui::SameLine();
+                        if (ImGui::RadioButton("4x4", gGrilleTaile == 4)) gGrilleTaile = 4; ImGui::SameLine();
+                        if (ImGui::RadioButton("5x5", gGrilleTaile == 5)) gGrilleTaile = 5;
+                    ImGui::EndGroup();
+                    ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+
+                    // --- type de victoire
+                    CenteredText("TYPE DE VICTOIRE");
+                    ImGui::Spacing();
+                    ImGui::SetCursorPosX((leftPanelWidth - (radioWidth-50)) * 0.5f);
+                    ImGui::BeginGroup();
+                        if (gGrilleTaile == 4) {
+                        ImGui::RadioButton("3 alignés", &nbAlignerPourGagner, 3); ImGui::SameLine();
+                        ImGui::RadioButton("4 alignés", &nbAlignerPourGagner, 4);
+                        } else if (gGrilleTaile == 5) {
+                        ImGui::RadioButton("4 alignés", &nbAlignerPourGagner, 4); ImGui::SameLine();
+                        ImGui::RadioButton("5 alignés", &nbAlignerPourGagner, 5);
+                        } else {
+                        nbAlignerPourGagner = 3; // Forcé pour 3x3
+                        ImGui::Text("3 alignements requis");
+                        }
+                    ImGui::EndGroup();
+                    ImGui::Spacing(); ImGui::Separator(); ImGui::Spacing();
+
+                    // ... Reste de tes options (Difficulté, etc.) ...
+                    if (modeselect == 1) {
+                        ImGui::Spacing();
+                        CenteredText("DIFFICULTE IA");
+                        ImGui::SetNextItemWidth(leftPanelWidth * 0.8f);
+                        ImGui::SetCursorPosX(leftPanelWidth * 0.1f);
+                        ImGui::Combo("##Niveau", &IAlevel, "Facile\0Intermediaire\0EXPERT\0");
+                    }
+
+                ImGui::EndChild();
+
+                // --- 3. Bouton Lancer (Au Centre de la zone restante) ---
+                float buttonW = 300.0f;
+                float buttonH = 90.0f;
+                // Position calculée pour être au centre de l'espace à droite du panneau
+                float centerX = leftPanelWidth + (w - leftPanelWidth - buttonW) * 0.5f;
+                float centerY = (h - buttonH) * 0.5f;
+
+                ImGui::SetCursorPos(ImVec2(centerX, centerY));
+
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.4f, 0.4f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(1.0f, 0.5f, 0.5f, 1.0f));
+                ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.9f, 0.3f, 0.3f, 1.0f));
+                ImGui::PushFont(launchfont);
+                if (ImGui::Button("LANCER LA PARTIE", ImVec2(buttonW, buttonH))) {
+                    InitialiserPartie(modeselect, gGrilleTaile, IAlevel);
                 }
+                ImGui::PopFont();
                 ImGui::PopStyleColor(3);
-
-                ImGui::End();
             } 
             else 
             {
-                // Largeur du panneau : 12% de la largeur de l'écran
-                float Lpanel = w * 0.12f; 
-                if (Lpanel < 150) Lpanel = 150;
-
-                // Hauteur du panneau : 30% de la hauteur de l'écran
-                float Hpanel = h * 0.3f;
-
-                // Position Collé à droite (Largeur écran - Largeur panneau - petite marge)
-                float posX = w - Lpanel - 4;
-                float posY = 4; // Petite marge en haut
-
-                ImGui::SetNextWindowPos(ImVec2(posX, posY), ImGuiCond_Always);
-                ImGui::SetNextWindowSize(ImVec2(Lpanel, Hpanel), ImGuiCond_Always);
-                ImGui::SetNextWindowCollapsed(true, ImGuiCond_Once);
-
-                ImGui::Begin("options", nullptr, ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoResize );
-
-                if (ImGui::CollapsingHeader("Taille de grille"))
-                {
-                    
-                    ImGui::Indent();
-                    // Bouton pour 3x3
-                    if (ImGui::RadioButton("3x3", gGrilleTaile == 3))
-                    {
-                        changegrillsize(3, h, w);
-                    }
-                    // Bouton pour 4x4
-                    if (ImGui::RadioButton("4x4", gGrilleTaile == 4))
-                    {
-                        changegrillsize(4, h, w);
-                    }
-                    // Bouton pour 5x5
-                    if (ImGui::RadioButton("5x5", gGrilleTaile == 5))
-                    {
-                        changegrillsize(5, h, w);
-                    }
-
-                    ImGui::Unindent();
+                // 1. Le Bouton pour ouvrir/fermer (placé en haut à gauche)
+                ImGui::SetCursorPos(ImVec2(10, 10)); 
+                if (ImGui::ImageButton("##btn_menu", (ImTextureID)(intptr_t)icones.menu, ImVec2(32, 32))) {
+                    menuisopen = !menuisopen; // Alterne entre ouvert et fermé
                 }
 
-                //ImGui::Spacing();
-                //pour les themes
-                if(ImGui::CollapsingHeader("Themes"))
+                // 2. Affichage conditionnel de la barre latérale
+                if (menuisopen) 
                 {
-                    ImGui::Indent();
-                    
-                    if (ImGui::Selectable("classic", them == 1))
-                    {
-                        them = 1;
-                        gWindow.SetThemeIs(them);
-                    }
-                    if (ImGui::Selectable("galaxi", them == 2))
-                    {
-                        them = 2;
-                        gWindow.SetThemeIs(them);
-                    }
-                    if (ImGui::Selectable("champ", them == 3))
-                    {
-                        them = 3;
-                        gWindow.SetThemeIs(them);
-                    }
-                    ImGui::Unindent();
-                }
+                    // On force la position du curseur au début pour que le child soit tout à gauche
+                    ImGui::SetCursorPos(ImVec2(0, 0));
 
-                ImGui::End();
+                    // Style : On ajoute un fond opaque pour que le menu soit bien lisible
+                    ImGui::PushFont(menufont);
+                    ImGui::PushStyleColor(ImGuiCol_ChildBg, ImVec4(0.12f, 0.12f, 0.12f, 0.95f));
+                    ImGui::PushStyleVar(ImGuiStyleVar_ChildRounding, 0.0f);
+
+                    // Début du menu enfant
+                    // Largeur : 20% de l'écran (w*0.20), Hauteur : toute la fenêtre (h)
+                    if (ImGui::BeginChild("options", ImVec2(w * 0.13f, (float)h), true, ImGuiWindowFlags_NoMove)) 
+                    {
+                        ImGui::Spacing(); ImGui::Spacing();
+                        CenteredText("PARAMETRES");
+                        ImGui::Separator();
+                        ImGui::Spacing();
+
+                        // --- Section Taille de Grille ---
+                        if (ImGui::CollapsingHeader("Taille de grille")) 
+                        {
+                            ImGui::Indent();
+                            if (ImGui::RadioButton("3x3", gGrilleTaile == 3)) changegrillsize(3, h, w);
+                            if (ImGui::RadioButton("4x4", gGrilleTaile == 4)) changegrillsize(4, h, w);
+                            if (ImGui::RadioButton("5x5", gGrilleTaile == 5)) changegrillsize(5, h, w);
+                            ImGui::Unindent();
+                        }
+
+                        // --- Section Thèmes ---
+                        if (ImGui::CollapsingHeader("Themes")) 
+                        {
+                            ImGui::Indent();
+                            if (ImGui::Selectable("Classique", them == 1)) { them = 1; gWindow.SetThemeIs(them); }
+                            if (ImGui::Selectable("Galaxie", them == 2))   { them = 2; gWindow.SetThemeIs(them); }
+                            if (ImGui::Selectable("Champ", them == 3))     { them = 3; gWindow.SetThemeIs(them); }
+                            ImGui::Unindent();
+                        }
+
+                        ImGui::Spacing();
+                        ImGui::Separator();
+                        
+                        // Bouton pour fermer le menu
+                        if (ImGui::Button("FERMER", ImVec2(-1, 30))) {
+                            menuisopen = false;
+                        }
+                    }
+                    ImGui::EndChild();
+                    
+                    ImGui::PopStyleVar();
+                    ImGui::PopStyleColor();
+                    ImGui::PopFont();
+                }
+                
 
             }
 
@@ -585,7 +617,8 @@ namespace Morpion
             {
                 AfficherFinDePartie();
             }
-
+            ImGui::End(); // Fin Canvas
+            ImGui::PopStyleVar();
             ImGui::Render();
             ImGui_ImplSDLRenderer3_RenderDrawData(ImGui::GetDrawData(),grenderer);
         }
@@ -629,8 +662,9 @@ namespace Morpion
             // 2. Configuration du Popup
             ImVec2 center = ImGui::GetMainViewport()->GetCenter();
             ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(0.5f, 0.5f));
-            ImGui::SetNextWindowSize(ImVec2(350, 250)); // Un peu plus large pour les icônes
+            ImGui::SetNextWindowSize(ImVec2(400, 150)); // Un peu plus large pour les icônes
             
+            ImGui::SetNextWindowBgAlpha(0.6f); // Fond sombre pour la visibilité
             // On force l'ouverture du popup une seule fois au passage en GAMEOVER
             if (Etatactuel == GameState::GAMEOVER && !ImGui::IsPopupOpen("Resultat")) {
                 ImGui::OpenPopup("Resultat");
@@ -641,29 +675,62 @@ namespace Morpion
                 // --- TEXTE DU GAGNANT ---
                 ImGui::Spacing();
                 std::string msg;
-                
+                ImVec4 couleurTexte;
+                ImFont* fontAUtiliser = nullptr;
                 if (joueuractuel->getid() == 1 && !matchnull())
                 {
+                    couleurTexte = ImVec4(0.0f, 0.8f, 1.0f, 1.0f); //bleu
+                    fontAUtiliser = winfont;
                     msg = "JOUEUR 1 A GAGNE !";
-                }else if (joueuractuel->getid() == 2 && !matchnull())
+
+                }else if (joueuractuel->getid() == 2 && !matchnull() && !iawin)
                 {
+                    couleurTexte = ImVec4(0.0f, 0.8f, 1.0f, 1.0f); //bleu
+                    fontAUtiliser = winfont;
                     msg = "JOUEUR 2 A GAGNE !";
+
                 }else
                 {
                     if (iawin)
                     {
-                        msg = "L'ORDINATEUR A GAGNE !";
+                        couleurTexte = ImVec4(1.0f, 0.2f, 0.10f, 1.0f); // Rouge
+                        fontAUtiliser = gameoverF;
+                        msg = "GAME OVER !!";
+                        
                     }else{
+                        couleurTexte = ImVec4(1.0f, 0.4f, 0.40f, 1.0f); //Rouge clair
+                        fontAUtiliser = gameoverF;
                         msg = "MATCH NULL !!";
+                        
                     }
                 }
 
-                CenteredText(msg.c_str());
-                ImGui::Separator();
+                ImGui::Spacing();
+                //application du style
+                if (fontAUtiliser) ImGui::PushFont(fontAUtiliser);
+                ImGui::PushStyleColor(ImGuiCol_Text, couleurTexte);
+
+                CenteredText(msg.c_str()); // L'affichage se fait ici
+
+                ImGui::PopStyleColor();
+                if (fontAUtiliser) ImGui::PopFont();
+
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Separator(); ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
+                ImGui::Spacing();
                 ImGui::Spacing();
 
                 // --- BOUTON RECOMMENCER (BLEU) ---
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 4);
                 // On change temporairement la couleur du bouton
+                ImGui::PushFont(menufont);
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.2f, 0.4f, 0.7f, 1.0f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.3f, 0.5f, 0.8f, 1.0f));
                 
@@ -678,8 +745,8 @@ namespace Morpion
                 
                 ImGui::PopStyleColor(2);
 
-                ImGui::Spacing();
-
+                ImGui::SameLine();
+                ImGui::SetCursorPosX(ImGui::GetCursorPosX() + 8);
                 // --- BOUTON MENU PRINCIPAL (ROUGE) ---
                 ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0.7f, 0.2f, 0.2f, 1.0f));
                 ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0.8f, 0.3f, 0.3f, 1.0f));
@@ -694,6 +761,7 @@ namespace Morpion
                 ImGui::Text("MENU PRINCIPAL");
 
                 ImGui::PopStyleColor(2);
+                ImGui::PopFont();
 
                 ImGui::EndPopup();
             }
@@ -736,11 +804,9 @@ namespace Morpion
 
         void Game::remplirindices()
         {
-            int c = 0;
-            for (auto d : grille)
+            for (int i = 0; i <= grille.size(); i ++)
             {
-                indice.push_back(c);
-                c ++;
+                indice.push_back(i);
             }
         }
 

@@ -11,7 +11,7 @@ SRCTOOL2= "-O coff"
 INCLUSION = "-Iinclude"
 RACINE = os.path.dirname(os.path.abspath(__file__))
 BUILD_DIR = "build"
-EXECUTABLE = os.path.join(BUILD_DIR, "morpion.exe")
+EXECUTABLE =  "morpion.exe"
 
 # On définit nos flags de base
 CFLAGS = ["-std=c++17", "-Wall"]

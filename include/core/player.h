@@ -15,7 +15,7 @@ enum class playertype {
 enum class IAlevel {
     FACILLE,
     INTERMEDIAIRE,
-    IMBATABLE
+    EXPERT
 };
 
 class Player {

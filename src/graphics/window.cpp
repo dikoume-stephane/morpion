@@ -87,6 +87,9 @@ void Window::loadthemes()
     themes[0].couleur = {0, 0, 0,10};
     themes[1].couleur = {10, 10, 44, 15};
     themes[2].couleur = {144, 238, 144};
+
+    //BGtexture
+    BGtexture = IMG_LoadTexture(gRenderer , "assets/texture/backgroud.png");
     
     //chargement des icones par theme
 

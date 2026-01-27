@@ -27,16 +27,9 @@ namespace Morpion
 
         // Le Cerveau Principal de l'IA
 
-        int Player::choisirCoup(const std::vector<Case>& grille, int nbrpg) {
+        int Player::choisirCoup(const std::vector<Case>& grille, int nbrpg)
+        {
 
-            //au cas ou le centre n'est pas encore occupé
-            int caseoccupe = 0;
-            for (const auto& c : grille) if (c.etat != 0) caseoccupe ++;
-            if (caseoccupe < 2)
-            {
-                int centre = grille.size() / 2;
-                if (grille.at(centre).etat == 0) return centre;
-            }
             // copie de la grille (modifiable pour les ia)
             std::vector<Case>& grilleModifiable = const_cast<std::vector<Case>&>(grille);
             // Aiguillage selon la difficulté
@@ -49,9 +42,9 @@ namespace Morpion
                     // on recicle minimax au lieu de créer une fonction à part
                     return calculMeilleurcoup(grilleModifiable, 2, nbrpg); 
 
-                case (int)IAlevel::IMBATABLE:
+                case (int)IAlevel::EXPERT:
                     // Profondeur élevée (4 ou 5) + Alpha-Beta complet
-                    return calculMeilleurcoup(grilleModifiable, 6, nbrpg);
+                    return calculMeilleurcoup(grilleModifiable, 5, nbrpg);
 
                 default:
                     return coupAleatoire(grille);
