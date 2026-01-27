@@ -36,6 +36,7 @@ namespace Morpion
             Player *joueur1;
             Player *joueur2;
             Player *joueuractuel;
+            SDL_Texture* IA[3];
             Morpion::Core::theme CurrentTheme;
             bool gRunningstatus;
             int IAlevel = 0;

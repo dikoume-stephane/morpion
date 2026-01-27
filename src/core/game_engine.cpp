@@ -64,6 +64,10 @@ namespace Morpion
             icones.quit = IMG_LoadTexture(grenderer,"assets/texture/general/quit.png");
             icones.replay = IMG_LoadTexture(grenderer,"assets/texture/general/replay.png");
            
+            //pour les IA
+            IA[0] = IMG_LoadTexture(grenderer,"assets/texture/ia/IA1.jpg");
+            IA[1] = IMG_LoadTexture(grenderer,"assets/texture/ia/IA2.png");
+            IA[2] = IMG_LoadTexture(grenderer,"assets/texture/ia/IA3.png");
         }
         
         void Game::destroyicones()
@@ -80,6 +84,12 @@ namespace Morpion
             icones.quit = nullptr;
             SDL_DestroyTexture(icones.replay);
             icones.replay = nullptr;
+
+            for (int i = 0; i < 3; i ++)
+            {
+                SDL_DestroyTexture(IA[i]);
+                IA[i] = nullptr;
+            }
         }
 
 
@@ -429,29 +439,53 @@ namespace Morpion
                 ImGui::PushStyleColor(ImGuiCol_Border, ImVec4(1.0f, 1.0f, 1.0f, 1.0f)); // Bordure blanche
                 ImGui::PushStyleColor(ImGuiCol_WindowBg, ImVec4(1.0f, 0.0f, 0.0f, 1.0f)); // Fond Rouge
         
-                // FLAGS : NoTitleBar enlève les boutons (fermer/réduire) et le nom
-                // NoResize et NoMove empêchent l'utilisateur de les déformer
+                // --- CONFIGURATION DES FLAGS POUR DES FENÊTRES "IMAGES SEULES" ---
+                // NoScrollbar et NoScrollWithMouse sont cruciaux pour éviter les barres de défilement parasites
                 ImGuiWindowFlags avatarFlags = ImGuiWindowFlags_NoTitleBar | 
-                                              ImGuiWindowFlags_NoResize | 
-                                              ImGuiWindowFlags_NoMove | 
-                                              ImGuiWindowFlags_NoCollapse;
-        
-                // Fenêtre Joueur 1
+                                            ImGuiWindowFlags_NoResize | 
+                                            ImGuiWindowFlags_NoMove | 
+                                            ImGuiWindowFlags_NoCollapse |
+                                            ImGuiWindowFlags_NoScrollbar |
+                                            ImGuiWindowFlags_NoScrollWithMouse;
+
+                // 1. On supprime temporairement les marges internes (Padding) pour que l'image touche les bords
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+                ImGui::PushStyleVar(ImGuiStyleVar_WindowBorderSize, 0.0f);
+
+                // --- FENÊTRE JOUEUR 1 (SINGE) ---
                 ImGui::SetNextWindowPos(ImVec2(margin, posY));
                 ImGui::SetNextWindowSize(ImVec2(panelz, panelz));
                 ImGui::Begin("Avatar_J1", nullptr, avatarFlags);
-                    CenteredText("JOUEUR 1");
+                    SDL_Texture* texJ1 = gWindow.Getplayer1texture();
+                    if (texJ1) {
+                        // L'image fait exactement la taille de la fenêtre (panelz)
+                        ImGui::Image((ImTextureID)texJ1, ImVec2(panelz, panelz));
+                    }
                 ImGui::End();
-        
-                // Fenêtre Joueur 2
+
+                // --- FENÊTRE JOUEUR 2 (CHAT OU IA) ---
                 ImGui::SetNextWindowPos(ImVec2(w - panelz - margin, posY));
                 ImGui::SetNextWindowSize(ImVec2(panelz, panelz));
                 ImGui::Begin("Avatar_J2", nullptr, avatarFlags);
-                    CenteredText(modeselect == 1 ? "IA" : "JOUEUR 2");
+                    
+                    SDL_Texture* texJ2 = nullptr;
+                    if (modeselect == 1) {
+                        // Récupération de l'image IA selon le niveau (0, 1, 2)
+                        if (IAlevel >= 0 && IAlevel <= 2) texJ2 = IA[IAlevel];
+                    } else {
+                        texJ2 = gWindow.Getplayer2texture();
+                    }
+
+                    if (texJ2) {
+                        ImGui::Image((ImTextureID)texJ2, ImVec2(panelz, panelz));
+                    }
                 ImGui::End();
-        
-                // On nettoie les styles pour ne pas affecter les autres fenêtres
-                ImGui::PopStyleColor(2);
+
+                // 2. On restaure les styles pour la suite de l'interface
+                ImGui::PopStyleVar(2);
+
+                // On nettoie tes styles originaux (selon ton code précédent)
+                ImGui::PopStyleColor(2); 
                 ImGui::PopStyleVar();
             }
         

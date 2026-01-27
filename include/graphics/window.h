@@ -41,6 +41,8 @@ public:
      
     // GETTERS 
     SDL_Renderer* GetRenderer() const { return gRenderer; }
+    SDL_Texture* Getplayer1texture()  { return GetCurrentTheme().player1;}
+    SDL_Texture* Getplayer2texture()  { return GetCurrentTheme().player2;}
     SDL_Window* GetgWindow() const { return gWindow; } 
     bool IsInitialized() const { return gInitializedstatus; } 
     float GetWidth() const { return gWidth; } 

@@ -73,7 +73,7 @@ void Window::Present() {
 
 void Window::loadthemes()
 {
-    
+    //les cases
     themes[0].piont[0] = IMG_LoadTexture(gRenderer , "assets/texture/theme1/vide1.png");
     themes[0].piont[1] = IMG_LoadTexture(gRenderer , "assets/texture/theme1/X1.png");
     themes[0].piont[2] = IMG_LoadTexture(gRenderer , "assets/texture/theme1/O1.png");
@@ -84,9 +84,18 @@ void Window::loadthemes()
     themes[2].piont[1] = IMG_LoadTexture(gRenderer , "assets/texture/theme3/X3.png");
     themes[2].piont[2] = IMG_LoadTexture(gRenderer , "assets/texture/theme3/O3.png");
 
+    //les couleurs
     themes[0].couleur = {0, 0, 0,10};
     themes[1].couleur = {10, 10, 44, 15};
     themes[2].couleur = {144, 238, 144};
+
+    //les perso
+    themes[0].player1 = IMG_LoadTexture(gRenderer,"assets/texture/theme1/chat1.png");
+    themes[0].player2 = IMG_LoadTexture(gRenderer,"assets/texture/theme1/singe1.png");
+    themes[1].player1 = IMG_LoadTexture(gRenderer,"assets/texture/theme2/chat2.jpg");
+    themes[1].player2 = IMG_LoadTexture(gRenderer,"assets/texture/theme2/singe2.jpg");
+    themes[2].player1 = IMG_LoadTexture(gRenderer,"assets/texture/theme3/chat3.png");
+    themes[2].player2 = IMG_LoadTexture(gRenderer,"assets/texture/theme3/singe3.png");
 
     //BGtexture
     BGtexture = IMG_LoadTexture(gRenderer , "assets/texture/backgroud.png");
@@ -165,6 +174,15 @@ void Window::destroythemes(Morpion::Core::theme* themes)
         themes[i].TUI.settings = nullptr;
         SDL_DestroyTexture(themes[i].TUI.sound);
         themes[i].TUI.sound = nullptr;
+    }
+
+    for (int i = 0; i < 3; i ++)
+    {
+        SDL_DestroyTexture(themes[i].player1);
+        themes[i].player1 = nullptr;
+        SDL_DestroyTexture(themes[i].player2);
+        themes[i].player2 = nullptr;
+
     }
     
 }

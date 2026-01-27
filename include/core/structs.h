@@ -57,9 +57,11 @@ struct textureUIG
 struct theme
 {
     SDL_Texture* piont[3];
+    SDL_Texture* player1;
+    SDL_Texture* player2;
     textureUI TUI;
     Color couleur;
-    theme() { piont[0] = piont[1] = piont[2] = nullptr; couleur;}
+    theme() { player1 = player2 = piont[0] = piont[1] = piont[2] = nullptr; couleur;}
 };
 
 } // namespace Core 
